@@ -5,8 +5,6 @@ class Stoic < Formula
   sha256 "945eac6d39c5ebdf4c98fed5882b401a711633c2103104d8378f76acc8194c19"
   license "Apache-2.0"
 
-  depends_on "rsync"  # Ensure modern rsync is available
-
   def install
     libexec.install Dir["*"]
     bin.install_symlink libexec/"bin/stoic"
