@@ -11,7 +11,13 @@ class Stoic < Formula
 
   def install
     libexec.install Dir["*"]
-    bin.install_symlink libexec/"bin/stoic"
+
+    # Use native binary for macOS ARM64, JVM version for everything else
+    if OS.mac? && Hardware::CPU.arm?
+      bin.install_symlink libexec/"bin/darwin-arm64/stoic"
+    else
+      bin.install_symlink libexec/"bin/jvm/stoic"
+    end
   end
 
   test do
