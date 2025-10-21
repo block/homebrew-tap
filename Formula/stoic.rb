@@ -4,10 +4,10 @@
 class Stoic < Formula
   desc "CLI tool for Android investigations"
   homepage "https://github.com/block/stoic"
-  url "https://github.com/block/stoic/releases/download/v0.7.0/stoic-release.tar.gz"
-  sha256 "c92504a0bf2725b8eff340208162dc0ad6aef51150c21a3524fd9cf65a5e1528"
+  url "https://github.com/block/stoic/releases/download/v0.8.0/stoic-release.tar.gz"
+  sha256 "4d3d798aedf8f2d2fa0935b5e815e2b82a5c9d24d250927399774e1c196f57ca"
   license "Apache-2.0"
-  version "0.7.0"
+  version "0.8.0"
 
   def install
     libexec.install Dir["*"]
