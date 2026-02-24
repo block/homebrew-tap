@@ -4,10 +4,10 @@
 class Francis < Formula
   desc "CLI for rigorous A/B performance testing on Android"
   homepage "https://github.com/block/francis"
-  url "https://github.com/block/francis/releases/download/v0.0.15/francis-release.tar.gz"
-  sha256 "b05a46c96ead1011278469822089b2d76b1afacd90fd6d9225d29db719a2af13"
+  url "https://github.com/block/francis/releases/download/v0.0.16/francis-release.tar.gz"
+  sha256 "5a64290e1df2af90ea759fcc134d5629f6e005316ae8792e4d37348649974efd"
   license "Apache-2.0"
-  version "0.0.15"
+  version "0.0.16"
 
   def install
     libexec.install Dir["*"]
