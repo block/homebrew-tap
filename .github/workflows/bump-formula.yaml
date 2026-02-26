@@ -40,7 +40,7 @@ jobs:
           ARTIFACT_URL: ${{ inputs.artifact_url }}
           INPUT_SHA256: ${{ inputs.sha256 }}
         run: |
-          set -euxo pipefail
+          set -euo pipefail
 
           if [[ "$NEW_TAG" =~ ([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
             NEW_VERSION="${BASH_REMATCH[1]}"
