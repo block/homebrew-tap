@@ -45,7 +45,7 @@ jobs:
             license "Apache-2.0"
             version "${VERSION}"
 
-            depends_on "stoic"
+            depends_on "block/tap/stoic"
 
             def install
               libexec.install Dir["*"]

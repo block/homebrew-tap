@@ -9,7 +9,7 @@ class Radiography < Formula
   license "Apache-2.0"
   version "2.9"
 
-  depends_on "stoic"
+  depends_on "block/tap/stoic"
 
   def install
     libexec.install Dir["*"]
