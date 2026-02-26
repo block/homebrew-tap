@@ -25,34 +25,31 @@ See https://docs.brew.sh/
 
 ## Maintainers: Adding A New Formula
 
-This tap uses GitHub Actions workflows to generate formula files from release artifacts.
+This tap uses one shared GitHub Actions workflow to bump any existing formula in place.
 
-1. Create a new workflow file at `.github/workflows/update-<formula>.yaml`.
-2. Copy one of the existing `update-*.yaml` workflows as a template.
-3. In that workflow:
-   - Add a `workflow_dispatch` `tag` input.
-   - Build the GitHub release download URL (or resolve the correct asset from the release API).
-   - Download the artifact and compute `sha256`.
-   - Write `Formula/<formula>.rb` using a heredoc.
-   - Commit and push the generated formula.
-4. In the generated formula content:
-   - Set `homepage`, `url`, `sha256`, `license`, and `version`.
-   - Add `depends_on` entries as needed.
-   - For dependencies from this tap, use fully-qualified names (for example `depends_on "block/tap/stoic"`) to avoid ambiguous tap resolution.
-   - Install the executable into `bin` with `bin.install_symlink`.
-5. Commit the workflow file.
-6. Trigger the workflow manually:
+1. Add a formula at `Formula/<formula>.rb`.
+2. Include `url`, `sha256`, and `version` fields in the formula.
+3. Trigger the shared bump workflow manually:
 
 ```bash
-gh workflow run update-<formula>.yaml -f tag=vX.Y.Z
+gh workflow run bump-formula.yaml \
+  -f repo=<org>/<repo> \
+  -f formula=<formula> \
+  -f tag=vX.Y.Z \
+  -f artifact_url=https://github.com/<org>/<repo>/releases/download/vX.Y.Z/<asset.tar.gz> \
+  -f sha256=<optional-sha256>
 ```
 
-7. Watch the run:
+4. Watch the run:
 
 ```bash
-gh run list --workflow update-<formula>.yaml --limit 1
+gh run list --workflow bump-formula.yaml --limit 1
 gh run watch <run-id>
 ```
+
+The workflow updates only the target formula's existing `url`, `sha256`, and `version` fields, then opens a PR.
+
+If `sha256` is omitted, the workflow downloads `artifact_url` and computes it automatically.
 
 After the workflow succeeds, users can install with:
 
