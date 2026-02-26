@@ -13,7 +13,7 @@ class Radiography < Formula
 
   def install
     libexec.install Dir["*"]
-    bin.install_symlink libexec/"radiography-stoic-plugin/radiography"
+    bin.install_symlink libexec/"radiography"
   end
 
   test do
