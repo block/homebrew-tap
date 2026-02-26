@@ -78,7 +78,7 @@ jobs:
           echo "commit_message=${COMMIT_MESSAGE}" >> "$GITHUB_OUTPUT"
           {
             echo "body<<EOF"
-            if [[ "$OLD_TAG" != "unknown" ]]; then
+            if [[ "$OLD_TAG" != "unknown" && "$OLD_TAG" != "$NEW_TAG" ]]; then
               echo "https://github.com/${REPO}/compare/${OLD_TAG}...${NEW_TAG}"
               echo
             fi
