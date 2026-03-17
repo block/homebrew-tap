@@ -27,13 +27,6 @@ jobs:
   bump-formula:
     runs-on: ubuntu-latest
     steps:
-      - name: Generate Token
-        uses: tibdex/github-app-token@32691ba7c9e7063bd457bd8f2a5703138591fa58 # v1
-        id: generate_token
-        with:
-          app_id: ${{ secrets.HOMEBREW_FORMULAS_APP_ID }}
-          private_key: ${{ secrets.HOMEBREW_FORMULAS_PRIVATE_KEY }}
-
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -110,7 +103,7 @@ jobs:
         id: create_pr
         uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8.1.0
         with:
-          token: ${{ steps.generate_token.outputs.token }}
+          token: ${{ github.token }}
           branch: ${{ steps.vars.outputs.branch }}
           commit-message: ${{ steps.vars.outputs.commit_message }}
           title: ${{ steps.vars.outputs.commit_message }}
