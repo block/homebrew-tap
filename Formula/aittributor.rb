@@ -1,3 +1,6 @@
+# Generated from templates/aittributor/aittributor.rb.tmpl — do not edit directly.
+# Run: gh workflow run bump-formula.yaml -f formula=aittributor
+
 class Aittributor < Formula
   desc "Git hook that adds AI agent attribution to commits"
   homepage "https://github.com/block/aittributor"

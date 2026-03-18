@@ -3,21 +3,9 @@ name: Bump Formula
 on:
   workflow_dispatch:
     inputs:
-      repo:
-        description: GitHub repo in owner/name format (for example, block/stoic)
-        required: true
       formula:
         description: Formula name (for example, stoic)
         required: true
-      tag:
-        description: Release tag (for example, v1.2.3)
-        required: true
-      artifact_url:
-        description: Full GitHub release artifact URL
-        required: true
-      sha256:
-        description: SHA256 for the release artifact (optional)
-        required: false
 
 permissions:
   contents: write
@@ -28,48 +16,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6.0.2
 
-      - name: Bump formula
+      - name: Activate Hermit
+        uses: cashapp/activate-hermit@12a728b03ad41eace0f9abaf98a035e7e8ea2318 # ratchet:cashapp/activate-hermit@v1.1.4
+
+      - name: Generate formula
         id: vars
         shell: bash
         env:
-          REPO: ${{ inputs.repo }}
           FORMULA_NAME: ${{ inputs.formula }}
-          NEW_TAG: ${{ inputs.tag }}
-          ARTIFACT_URL: ${{ inputs.artifact_url }}
-          INPUT_SHA256: ${{ inputs.sha256 }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
 
-          if [[ "$NEW_TAG" =~ ([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-            NEW_VERSION="${BASH_REMATCH[1]}"
-          else
-            NEW_VERSION="${NEW_TAG}"
-          fi
+          OLD_VERSION=$(sed -nE 's/^\s*version "([^"]+)"\s*$/\1/p' "Formula/${FORMULA_NAME}.rb" | head -n1)
 
-          SCRIPT_ARGS=(
-            --formula "$FORMULA_NAME"
-            --version "$NEW_VERSION"
-            --tag "$NEW_TAG"
-            --artifact-url "$ARTIFACT_URL"
-          )
-          if [[ -n "$INPUT_SHA256" ]]; then
-            SCRIPT_ARGS+=(--sha256 "$INPUT_SHA256")
-          fi
+          scripts/generate-formula.sh "$FORMULA_NAME"
 
-          OLD_TAG="$({ python3 scripts/bump-formula.py "${SCRIPT_ARGS[@]}"; } | tee >(cat 1>&2) | grep -o 'from tag .* to' | cut -d' ' -f3)"
-
-          FORMULA_FILE="Formula/${FORMULA_NAME}.rb"
-          SHA256="$(sed -nE 's/^\s*sha256 "([0-9a-f]{64})"\s*$/\1/p' "$FORMULA_FILE" | head -n1)"
-          if [[ -z "${SHA256:-}" ]]; then
-            echo "Unable to read updated sha256 from ${FORMULA_FILE}"
-            exit 1
-          fi
-
-          if [[ -z "${OLD_TAG:-}" ]]; then
-            OLD_TAG="unknown"
-          fi
+          NEW_VERSION=$(sed -nE 's/^\s*version "([^"]+)"\s*$/\1/p' "Formula/${FORMULA_NAME}.rb" | head -n1)
+          NEW_TAG=$(gh release view --repo "block/${FORMULA_NAME}" --json tagName --jq .tagName)
 
           BRANCH="bump-${FORMULA_NAME}-to-${NEW_VERSION}"
           COMMIT_MESSAGE="Bump ${FORMULA_NAME} to ${NEW_VERSION}"
@@ -78,13 +44,10 @@ jobs:
           echo "commit_message=${COMMIT_MESSAGE}" >> "$GITHUB_OUTPUT"
           {
             echo "body<<EOF"
-            if [[ "$OLD_TAG" != "unknown" && "$OLD_TAG" != "$NEW_TAG" ]]; then
-              echo "https://github.com/${REPO}/compare/${OLD_TAG}...${NEW_TAG}"
+            if [[ -n "${OLD_VERSION:-}" && "$OLD_VERSION" != "$NEW_VERSION" ]]; then
+              echo "https://github.com/block/${FORMULA_NAME}/compare/v${OLD_VERSION}...${NEW_TAG}"
               echo
             fi
-            echo "Artifact: ${ARTIFACT_URL}"
-            echo "SHA256: ${SHA256}"
-            echo
             echo "You can test your changes before merging this pull request with:"
             echo '```sh'
             echo 'git -C $(brew --repo block/tap) fetch'
@@ -101,7 +64,7 @@ jobs:
 
       - name: Create Pull Request
         id: create_pr
-        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8.1.0
+        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # ratchet:peter-evans/create-pull-request@v8.1.0
         with:
           token: ${{ github.token }}
           branch: ${{ steps.vars.outputs.branch }}
