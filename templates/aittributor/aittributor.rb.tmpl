@@ -1,0 +1,39 @@
+# Generated from templates/aittributor/aittributor.rb.tmpl — do not edit directly.
+# Run: gh workflow run bump-formula.yaml -f formula=aittributor
+
+class Aittributor < Formula
+  desc "Git hook that adds AI agent attribution to commits"
+  homepage "https://github.com/block/aittributor"
+  license "Apache-2.0"
+  version "{{.version}}"
+
+  on_macos do
+    if Hardware::CPU.arm?
+      url "https://github.com/block/aittributor/releases/download/{{.tag}}/aittributor-aarch64-apple-darwin.bz2"
+      sha256 "{{ sha256 .assets "aittributor-aarch64-apple-darwin" }}"
+    else
+      url "https://github.com/block/aittributor/releases/download/{{.tag}}/aittributor-x86_64-apple-darwin.bz2"
+      sha256 "{{ sha256 .assets "aittributor-x86_64-apple-darwin" }}"
+    end
+  end
+
+  on_linux do
+    if Hardware::CPU.arm?
+      url "https://github.com/block/aittributor/releases/download/{{.tag}}/aittributor-aarch64-unknown-linux-gnu.bz2"
+      sha256 "{{ sha256 .assets "aittributor-aarch64-unknown-linux-gnu" }}"
+    else
+      url "https://github.com/block/aittributor/releases/download/{{.tag}}/aittributor-x86_64-unknown-linux-gnu.bz2"
+      sha256 "{{ sha256 .assets "aittributor-x86_64-unknown-linux-gnu" }}"
+    end
+  end
+
+  def install
+    binary = buildpath.children.first
+    binary.chmod 0755
+    bin.install binary => "aittributor"
+  end
+
+  test do
+    system bin/"aittributor", "--help"
+  end
+end

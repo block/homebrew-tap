@@ -1,3 +1,6 @@
+# Generated from templates/lhm/lhm.rb.tmpl — do not edit directly.
+# Run: gh workflow run bump-formula.yaml -f formula=lhm
+
 class Lhm < Formula
   desc "Merges global and repo lefthook configs"
   homepage "https://github.com/block/lhm"
