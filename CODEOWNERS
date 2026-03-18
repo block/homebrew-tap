@@ -9,6 +9,7 @@
 
 # Formula-specific owners.
 Formula/aittributor.rb @alecthomas
+Formula/anchors.rb @loganj
 Formula/francis.rb @tcmulcahy
 Formula/lhm.rb @alecthomas
 Formula/qrgo.rb @afollestad
