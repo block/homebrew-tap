@@ -1,24 +1,17 @@
-# This CODEOWNERS file denotes the project leads
-# and encodes their responsibilities for code review.
+# CODEOWNERS
+# https://docs.github.com/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# Rules are matched top-to-bottom, and the last matching pattern wins.
+# Keep broad rules first and more specific rules below.
 
-# Instructions: At a minimum, replace the '@GITHUB_USER_NAME_GOES_HERE'
-# here with at least one project lead.
+# Default owners for everything in the repository.
+* @tcmulcahy
 
-# Lines starting with '#' are comments.
-# Each line is a file pattern followed by one or more owners.
-# The format is described: https://github.blog/2017-07-06-introducing-code-owners/
-
-# These owners will be the default owners for everything in the repo.
-*       @GITHUB_USER_NAME_GOES_HERE
-
-
-# -----------------------------------------------
-# BELOW THIS LINE ARE TEMPLATES, UNUSED
-# -----------------------------------------------
-# Order is important. The last matching pattern has the most precedence.
-# So if a pull request only touches javascript files, only these owners
-# will be requested to review.
-# *.js    @octocat @github/js
-
-# You can also use email addresses if you prefer.
-# docs/*  docs@example.com
+# Formula-specific owners.
+Formula/aittributor.rb @alecthomas
+Formula/francis.rb @tcmulcahy
+Formula/lhm.rb @alecthomas
+Formula/qrgo.rb @afollestad
+Formula/radiography.rb @tcmulcahy @zach-klippenstein
+Formula/spirit.rb @aparajon
+Formula/stoic.rb @tcmulcahy
