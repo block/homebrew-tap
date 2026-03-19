@@ -13,8 +13,8 @@ on:
         description: Release tag (for example, v1.2.3)
         required: true
       artifact_url:
-        description: Full GitHub release artifact URL
-        required: true
+        description: Full GitHub release artifact URL (required for single-arch formulas)
+        required: false
       sha256:
         description: SHA256 for the release artifact (optional)
         required: false
@@ -52,8 +52,10 @@ jobs:
             --formula "$FORMULA_NAME"
             --version "$NEW_VERSION"
             --tag "$NEW_TAG"
-            --artifact-url "$ARTIFACT_URL"
           )
+          if [[ -n "$ARTIFACT_URL" ]]; then
+            SCRIPT_ARGS+=(--artifact-url "$ARTIFACT_URL")
+          fi
           if [[ -n "$INPUT_SHA256" ]]; then
             SCRIPT_ARGS+=(--sha256 "$INPUT_SHA256")
           fi
