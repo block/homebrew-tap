@@ -1,0 +1,30 @@
+name: Test Bump Formula
+
+on:
+  pull_request:
+    paths:
+      - "scripts/bump-formula.py"
+      - "scripts/test_bump_formula.py"
+      - ".github/workflows/test-bump-formula.yaml"
+  push:
+    branches:
+      - main
+    paths:
+      - "scripts/bump-formula.py"
+      - "scripts/test_bump_formula.py"
+      - ".github/workflows/test-bump-formula.yaml"
+  workflow_dispatch:
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run bump-formula regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/test_bump_formula.py
