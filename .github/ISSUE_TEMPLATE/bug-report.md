@@ -3,7 +3,6 @@ name: 🐛 Bug Report
 about: Thank you for taking the time, please report a reproducible bug
 title: "[Bug] <Bug Title Here>"
 labels: bug
-assignees: add codeowner's @name here 
 
 ---
 
