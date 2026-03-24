@@ -2,15 +2,30 @@
 
 from __future__ import annotations
 
-import hashlib
 import os
 import re
 import subprocess
 import sys
 import tempfile
-import urllib.request
 from pathlib import Path
-from typing import Mapping
+
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+import brew_utils
+
+
+compute_sha256 = brew_utils.compute_sha256
+extract_all_fields = brew_utils.extract_all_fields
+extract_field = brew_utils.extract_field
+extract_release_tag_from_url = brew_utils.extract_release_tag_from_url
+fail = brew_utils.fail
+replace_nth_field = brew_utils.replace_nth_field
+resolve_sha256 = brew_utils.resolve_sha256
+update_fields = brew_utils.update_fields
+validate_artifact_url = brew_utils.validate_artifact_url
 
 
 REQUIRED_ENV_VARS = (
@@ -21,19 +36,6 @@ REQUIRED_ENV_VARS = (
     "PR_BASE",
     "PR_REPO",
 )
-
-FIELD_VALUE_PATTERNS = {
-    "url": r'[^"]+',
-    "sha256": r"[0-9a-f]{64}",
-    "version": r'[^"]+',
-}
-
-ARTIFACT_DOWNLOAD_TIMEOUT_SECONDS = 60
-
-
-def fail(message: str) -> None:
-    print(message, file=sys.stderr)
-    raise SystemExit(1)
 
 
 def require_env(name: str) -> str:
@@ -46,83 +48,6 @@ def require_env(name: str) -> str:
 def derive_new_version(tag: str) -> str:
     match = re.search(r"([0-9]+\.[0-9]+\.[0-9]+)$", tag)
     return match.group(1) if match else tag
-
-
-def replace_line(contents: str, pattern: str, replacement: str, error: str) -> str:
-    updated, count = re.subn(pattern, replacement, contents, count=1, flags=re.MULTILINE)
-    if count != 1:
-        fail(error)
-    return updated
-
-
-def extract_field(contents: str, field_name: str, rb_file: Path) -> str:
-    match = re.search(rf'^\s*{field_name}\s+"([^"]+)"\s*$', contents, flags=re.MULTILINE)
-    if not match:
-        fail(f"Unable to find {field_name} line in {rb_file}")
-    return match.group(1)
-
-
-def extract_all_fields(contents: str, field_name: str) -> list[str]:
-    return re.findall(rf'^\s*{field_name}\s+"([^"]+)"\s*$', contents, flags=re.MULTILINE)
-
-
-def update_fields(contents: str, updates: Mapping[str, str], rb_file: Path) -> str:
-    for field_name, new_value in updates.items():
-        value_pattern = FIELD_VALUE_PATTERNS[field_name]
-        contents = replace_line(
-            contents,
-            rf'^(\s*){field_name}\s+"{value_pattern}"[ \t]*$',
-            rf'\1{field_name} "{new_value}"',
-            f"Unable to update {field_name} in {rb_file}",
-        )
-    return contents
-
-
-def replace_nth_field(contents: str, field_name: str, n: int, new_value: str, rb_file: Path) -> str:
-    value_pattern = FIELD_VALUE_PATTERNS[field_name]
-    pattern = rf'^(\s*){field_name}\s+"{value_pattern}"[ \t]*$'
-    matches = list(re.finditer(pattern, contents, flags=re.MULTILINE))
-    if n >= len(matches):
-        fail(f"Unable to update {field_name} occurrence {n} in {rb_file}")
-    match = matches[n]
-    indent = match.group(1)
-    replacement = f'{indent}{field_name} "{new_value}"'
-    return contents[: match.start()] + replacement + contents[match.end() :]
-
-
-def validate_artifact_url(artifact_url: str) -> None:
-    if not artifact_url.startswith("https://"):
-        fail("artifact_url must start with https://")
-
-
-def compute_sha256(artifact_url: str) -> str:
-    digest = hashlib.sha256()
-    try:
-        with urllib.request.urlopen(artifact_url, timeout=ARTIFACT_DOWNLOAD_TIMEOUT_SECONDS) as response:
-            while True:
-                chunk = response.read(1024 * 1024)
-                if not chunk:
-                    break
-                digest.update(chunk)
-    except OSError as error:
-        fail(f"Unable to download artifact for SHA256 computation: {artifact_url} ({error})")
-    return digest.hexdigest()
-
-
-def resolve_sha256(sha256: str | None, artifact_url: str) -> str:
-    if sha256 is None:
-        print(f"Computing SHA256 from {artifact_url}", file=sys.stderr)
-        sha256 = compute_sha256(artifact_url)
-
-    if not re.fullmatch(r"[0-9a-f]{64}", sha256):
-        fail("sha256 must be a 64-character lowercase hex string")
-
-    return sha256
-
-
-def extract_release_tag_from_url(url: str) -> str:
-    tag_match = re.search(r"/releases/download/([^/]+(?:/[^/]+)?)/", url)
-    return tag_match.group(1) if tag_match else "unknown"
 
 
 def is_multi_arch_formula(contents: str) -> bool:

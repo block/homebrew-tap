@@ -332,17 +332,12 @@ class BumpFormulaAndPrScriptTests(unittest.TestCase):
         self.assertIn("e" * 64, pr_body)
         self.assertNotIn("Artifact: ", pr_body)
 
-    def test_compute_sha256_reports_download_errors(self) -> None:
+    def test_compute_sha256_surfaces_download_errors(self) -> None:
         module = self.load_script_module()
 
-        stderr = io.StringIO()
-        with contextlib.redirect_stderr(stderr):
-            with mock.patch.object(module.urllib.request, "urlopen", side_effect=OSError("timed out")):
-                with self.assertRaises(SystemExit) as exit_context:
-                    module.compute_sha256("https://example.com/demo.tar.gz")
-
-        self.assertEqual(exit_context.exception.code, 1)
-        self.assertIn("Unable to download artifact for SHA256 computation", stderr.getvalue())
+        with mock.patch.object(module.brew_utils.urllib.request, "urlopen", side_effect=OSError("timed out")):
+            with self.assertRaises(OSError):
+                module.compute_sha256("https://example.com/demo.tar.gz")
 
     def test_validate_artifact_url_rejects_non_https(self) -> None:
         module = self.load_script_module()
