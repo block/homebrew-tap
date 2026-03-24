@@ -30,53 +30,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Bump cask
-        id: vars
+      - name: Bump cask and create/update pull request
         shell: bash
         env:
+          BUMP_TYPE: cask
+          BUMP_NAME: ${{ inputs.cask }}
           REPO: ${{ inputs.repo }}
-          CASK_NAME: ${{ inputs.cask }}
           NEW_TAG: ${{ inputs.tag }}
           ARTIFACT_URL: ${{ inputs.artifact_url }}
           INPUT_SHA256: ${{ inputs.sha256 }}
+          GH_TOKEN: ${{ github.token }}
+          PR_BASE: ${{ github.event.repository.default_branch }}
+          PR_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          ARGS=(
-            --type cask
-            --name "$CASK_NAME"
-            --tag "$NEW_TAG"
-            --repo "$REPO"
-            --artifact-url "$ARTIFACT_URL"
-            --python-script scripts/bump-cask.py
-            --install-command "brew install --cask block/tap/${CASK_NAME}"
-          )
-          if [[ -n "$INPUT_SHA256" ]]; then
-            ARGS+=(--sha256 "$INPUT_SHA256")
-          fi
-          scripts/prepare-bump-pr.sh "${ARGS[@]}"
-
-      - name: Create Pull Request
-        id: create_pr
-        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8.1.0
-        with:
-          token: ${{ github.token }}
-          branch: ${{ steps.vars.outputs.branch }}
-          commit-message: ${{ steps.vars.outputs.commit_message }}
-          title: ${{ steps.vars.outputs.commit_message }}
-          body: ${{ steps.vars.outputs.body }}
-
-      - name: Report Pull Request Result
-        shell: bash
-        env:
-          PR_OPERATION: ${{ steps.create_pr.outputs.pull-request-operation }}
-          PR_URL: ${{ steps.create_pr.outputs.pull-request-url }}
-          PR_BRANCH: ${{ steps.vars.outputs.branch }}
-        run: |
-          set -euo pipefail
-
-          if [[ "$PR_OPERATION" == "none" || -z "${PR_URL:-}" ]]; then
-            echo "No pull request was created because no cask changes were detected."
-            echo "Branch: ${PR_BRANCH}"
-          else
-            echo "Pull request ${PR_OPERATION}: ${PR_URL}"
-          fi
+          python3 scripts/bump-and-pr.py
