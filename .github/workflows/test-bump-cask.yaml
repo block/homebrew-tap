@@ -1,22 +1,22 @@
-name: Test Bump Formula
+name: Test Bump Cask
 
 on:
   pull_request:
     paths:
-      - "scripts/bump-formula.py"
+      - "scripts/bump-cask.py"
       - "scripts/brew_utils.py"
-      - "scripts/test_bump_formula.py"
+      - "scripts/test_bump_cask.py"
       - "scripts/test_helpers.py"
-      - ".github/workflows/test-bump-formula.yaml"
+      - ".github/workflows/test-bump-cask.yaml"
   push:
     branches:
       - main
     paths:
-      - "scripts/bump-formula.py"
+      - "scripts/bump-cask.py"
       - "scripts/brew_utils.py"
-      - "scripts/test_bump_formula.py"
+      - "scripts/test_bump_cask.py"
       - "scripts/test_helpers.py"
-      - ".github/workflows/test-bump-formula.yaml"
+      - ".github/workflows/test-bump-cask.yaml"
   workflow_dispatch:
 
 jobs:
@@ -27,8 +27,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Run bump-formula regression tests
+      - name: Run bump-cask regression tests
         shell: bash
         run: |
           set -euo pipefail
-          python3 scripts/test_bump_formula.py
+          python3 scripts/test_bump_cask.py

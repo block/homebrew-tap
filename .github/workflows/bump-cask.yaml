@@ -1,20 +1,20 @@
-name: Bump Formula
+name: Bump Cask
 
 on:
   workflow_dispatch:
     inputs:
       repo:
-        description: GitHub repo in owner/name format (for example, block/stoic)
+        description: GitHub repo in owner/name format (for example, block/builderbot)
         required: true
-      formula:
-        description: Formula name (for example, stoic)
+      cask:
+        description: Cask name (for example, penpal)
         required: true
       tag:
-        description: Release tag (for example, v1.2.3)
+        description: Release tag (for example, penpal-1.2.3)
         required: true
       artifact_url:
-        description: Full GitHub release artifact URL (required for single-arch formulas)
-        required: false
+        description: Full GitHub release artifact URL
+        required: true
       sha256:
         description: SHA256 for the release artifact (optional)
         required: false
@@ -24,34 +24,32 @@ permissions:
   pull-requests: write
 
 jobs:
-  bump-formula:
+  bump-cask:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Bump formula
+      - name: Bump cask
         id: vars
         shell: bash
         env:
           REPO: ${{ inputs.repo }}
-          FORMULA_NAME: ${{ inputs.formula }}
+          CASK_NAME: ${{ inputs.cask }}
           NEW_TAG: ${{ inputs.tag }}
           ARTIFACT_URL: ${{ inputs.artifact_url }}
           INPUT_SHA256: ${{ inputs.sha256 }}
         run: |
           set -euo pipefail
           ARGS=(
-            --type formula
-            --name "$FORMULA_NAME"
+            --type cask
+            --name "$CASK_NAME"
             --tag "$NEW_TAG"
             --repo "$REPO"
-            --python-script scripts/bump-formula.py
-            --install-command "brew install block/tap/${FORMULA_NAME}"
+            --artifact-url "$ARTIFACT_URL"
+            --python-script scripts/bump-cask.py
+            --install-command "brew install --cask block/tap/${CASK_NAME}"
           )
-          if [[ -n "$ARTIFACT_URL" ]]; then
-            ARGS+=(--artifact-url "$ARTIFACT_URL")
-          fi
           if [[ -n "$INPUT_SHA256" ]]; then
             ARGS+=(--sha256 "$INPUT_SHA256")
           fi
@@ -77,7 +75,7 @@ jobs:
           set -euo pipefail
 
           if [[ "$PR_OPERATION" == "none" || -z "${PR_URL:-}" ]]; then
-            echo "No pull request was created because no formula changes were detected."
+            echo "No pull request was created because no cask changes were detected."
             echo "Branch: ${PR_BRANCH}"
           else
             echo "Pull request ${PR_OPERATION}: ${PR_URL}"
