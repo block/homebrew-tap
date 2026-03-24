@@ -25,4 +25,4 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 scripts/test_bump_cask_and_pr.py
+          python3 -m unittest scripts.test_bump_cask_and_pr
