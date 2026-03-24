@@ -172,7 +172,7 @@ def create_or_update_pr(
 
     run_command(["git", "checkout", "-B", branch])
     run_command(["git", "add", "-A"])
-    run_command(["git", "commit", "-m", commit_message])
+    run_command(["git", "commit", "--signoff", "-m", commit_message])
     run_command(["git", "push", "--force", "--set-upstream", "origin", branch])
 
     body_file_path = ""
