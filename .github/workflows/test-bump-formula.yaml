@@ -3,20 +3,14 @@ name: Test Bump Formula
 on:
   pull_request:
     paths:
-      - "scripts/bump-formula.py"
-      - "scripts/brew_utils.py"
-      - "scripts/test_bump_formula.py"
-      - "scripts/test_helpers.py"
-      - ".github/workflows/test-bump-formula.yaml"
+      - "scripts/**"
+      - ".github/workflows/**"
   push:
     branches:
       - main
     paths:
-      - "scripts/bump-formula.py"
-      - "scripts/brew_utils.py"
-      - "scripts/test_bump_formula.py"
-      - "scripts/test_helpers.py"
-      - ".github/workflows/test-bump-formula.yaml"
+      - "scripts/**"
+      - ".github/workflows/**"
   workflow_dispatch:
 
 jobs:
@@ -31,4 +25,4 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 scripts/test_bump_formula.py
+          python3 -m unittest scripts.test_bump_formula_and_pr

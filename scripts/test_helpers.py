@@ -1,42 +1,73 @@
-#!/usr/bin/env python3
-
 from __future__ import annotations
 
 import pathlib
-import shutil
-import subprocess
-import tempfile
-import unittest
 
 
-REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
+def install_fake_git(fake_bin: pathlib.Path, *, changed_path: str) -> None:
+    fake_git = fake_bin / "git"
+    fake_git.write_text(
+        "#!/usr/bin/env bash\n"
+        "set -euo pipefail\n"
+        "echo \"git $*\" >> \"$COMMAND_LOG\"\n"
+        "case \"${1:-}\" in\n"
+        "  status)\n"
+        "    if [[ \"${2:-}\" == \"--porcelain\" ]]; then\n"
+        "      if [[ \"${FAKE_GIT_HAS_CHANGES:-true}\" == \"true\" ]]; then\n"
+        f"        printf ' M {changed_path}\\n'\n"
+        "      fi\n"
+        "      exit 0\n"
+        "    fi\n"
+        "    ;;\n"
+        "  config|checkout|add|commit|push)\n"
+        "    exit 0\n"
+        "    ;;\n"
+        "esac\n"
+        "echo \"unexpected git invocation: $*\" >&2\n"
+        "exit 1\n"
+    )
+    fake_git.chmod(0o755)
 
 
-class BumpTestBase(unittest.TestCase):
-    """Base class for bump-formula and bump-cask regression tests."""
-
-    maxDiff = None
-
-    # Subclasses must set these
-    SCRIPT: pathlib.Path
-    DIR_NAME: str  # "Formula" or "Casks"
-    CLI_FLAG: str  # "--formula" or "--cask"
-
-    def setUp(self) -> None:
-        self._sandbox = pathlib.Path(tempfile.mkdtemp(prefix=f"bump-{self.DIR_NAME.lower()}-test."))
-        (self._sandbox / self.DIR_NAME).mkdir(parents=True, exist_ok=True)
-
-    def tearDown(self) -> None:
-        shutil.rmtree(self._sandbox)
-
-    def run_bump(self, *args: str) -> subprocess.CompletedProcess[str]:
-        return subprocess.run(
-            ["python3", str(self.SCRIPT), *args],
-            cwd=self._sandbox,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-
-    def rb_path(self, name: str) -> pathlib.Path:
-        return self._sandbox / self.DIR_NAME / f"{name}.rb"
+def install_fake_gh(fake_bin: pathlib.Path) -> None:
+    fake_gh = fake_bin / "gh"
+    fake_gh.write_text(
+        "#!/usr/bin/env bash\n"
+        "set -euo pipefail\n"
+        "echo \"gh $*\" >> \"$COMMAND_LOG\"\n"
+        "capture_body() {\n"
+        "  local body_file=\"\"\n"
+        "  local i=1\n"
+        "  while [[ $i -le $# ]]; do\n"
+        "    local arg=\"${!i}\"\n"
+        "    if [[ \"$arg\" == \"--body-file\" ]]; then\n"
+        "      i=$((i + 1))\n"
+        "      body_file=\"${!i}\"\n"
+        "      break\n"
+        "    fi\n"
+        "    i=$((i + 1))\n"
+        "  done\n"
+        "  if [[ -n \"$body_file\" ]]; then\n"
+        "    {\n"
+        "      echo \"PR_BODY_START\"\n"
+        "      cat \"$body_file\"\n"
+        "      echo \"PR_BODY_END\"\n"
+        "    } >> \"$PR_BODY_LOG\"\n"
+        "  fi\n"
+        "}\n"
+        "if [[ \"${1:-}\" == \"pr\" && \"${2:-}\" == \"list\" ]]; then\n"
+        "  printf '%s\\n' \"${FAKE_EXISTING_PR_URL:-null}\"\n"
+        "  exit 0\n"
+        "fi\n"
+        "if [[ \"${1:-}\" == \"pr\" && \"${2:-}\" == \"edit\" ]]; then\n"
+        "  capture_body \"$@\"\n"
+        "  exit 0\n"
+        "fi\n"
+        "if [[ \"${1:-}\" == \"pr\" && \"${2:-}\" == \"create\" ]]; then\n"
+        "  capture_body \"$@\"\n"
+        "  printf '%s\\n' \"${FAKE_CREATED_PR_URL:-}\"\n"
+        "  exit 0\n"
+        "fi\n"
+        "echo \"unexpected gh invocation: $*\" >&2\n"
+        "exit 1\n"
+    )
+    fake_gh.chmod(0o755)
