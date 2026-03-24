@@ -206,7 +206,7 @@ class BumpFormulaAndPrScriptTests(unittest.TestCase):
 
         commands = self.read_commands()
         self.assertIn("git status --porcelain", commands)
-        self.assertIn("git commit -m Bump demo to 1.2.3", commands)
+        self.assertIn("git commit --signoff -m Bump demo to 1.2.3", commands)
         self.assertTrue(any(command.startswith("gh pr create ") for command in commands))
 
         pr_body = self._pr_body_log.read_text()
