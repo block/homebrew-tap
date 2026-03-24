@@ -35,6 +35,7 @@ REQUIRED_ENV_VARS = (
     "NEW_TAG",
     "PR_BASE",
     "PR_REPO",
+    "GH_TOKEN",
 )
 
 

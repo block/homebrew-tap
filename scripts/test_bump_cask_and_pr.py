@@ -150,6 +150,14 @@ class BumpCaskAndPrScriptTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("Missing required environment variable: REPO", result.stderr)
 
+    def test_missing_gh_token_fails(self) -> None:
+        self.write_cask("demo", "e" * 64)
+
+        result = self.run_script(GH_TOKEN=None)
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("Missing required environment variable: GH_TOKEN", result.stderr)
+
     def test_requires_artifact_url(self) -> None:
         self.write_cask("demo", "e" * 64)
 
@@ -174,4 +182,3 @@ class BumpCaskAndPrScriptTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 1)
         self.assertIn("Unable to update sha256 in Casks/demo.rb", result.stderr)
-

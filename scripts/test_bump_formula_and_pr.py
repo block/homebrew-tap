@@ -183,6 +183,14 @@ class BumpFormulaAndPrScriptTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("Missing required environment variable: REPO", result.stderr)
 
+    def test_missing_gh_token_fails(self) -> None:
+        self.write_formula("demo", "e" * 64)
+
+        result = self.run_script(GH_TOKEN=None)
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("Missing required environment variable: GH_TOKEN", result.stderr)
+
     def test_single_arch_requires_artifact_url(self) -> None:
         self.write_formula("demo", "e" * 64)
 
@@ -281,4 +289,3 @@ class BumpFormulaAndPrScriptTests(unittest.TestCase):
 
         self.assertEqual(exit_context.exception.code, 1)
         self.assertIn("artifact_url must start with https://", stderr.getvalue())
-
