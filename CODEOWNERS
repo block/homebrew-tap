@@ -5,7 +5,7 @@
 # Keep broad rules first and more specific rules below.
 
 # Default owners for everything in the repository.
-* @tcmulcahy @afollestad @loganj
+* @tcmulcahy @afollestad @loganj @alecthomas
 
 # Formula-specific owners.
 Formula/aittributor.rb @alecthomas
