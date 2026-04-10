@@ -5,10 +5,10 @@
 class Anchors < Formula
   desc "CLI for the ANCHORS requirements-driven development framework"
   homepage "https://github.com/block/anchorsmd"
-  url "https://github.com/block/anchorsmd/releases/download/0.1.0/anchors-release.tar.gz"
-  sha256 "03abad3f4091b5c7af2a92964b7c50a62b293ce91554f22f94db3c7f9c3c48ba"
+  url "https://github.com/block/anchorsmd/releases/download/0.2.0/anchors-release.tar.gz"
+  sha256 "89f85b2079bc4458f4e097ccef9b69aa56d1879176d292ccfd2ecdf330e9d465"
   license "Apache-2.0"
-  version "0.1.0"
+  version "0.2.0"
 
   def install
     libexec.install "anchors"
