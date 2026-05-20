@@ -3,22 +3,16 @@
 # Run: gh workflow run bump-formula.yaml -f repo=block/sessh -f formula=sessh -f tag=<tag> -f artifact_url=<artifact_url> [-f sha256=<sha256>]
 
 class Sessh < Formula
-  desc "SSH with persistent tmux-backed sessions"
+  desc "SSH with seamless connection recovery"
   homepage "https://github.com/block/sessh"
-  url "https://github.com/block/sessh/releases/download/v0.3.0/sessh-release.tar.gz"
-  sha256 "63f3acf04850646f46334ab0d96be5a3c6c6a45d20a18190dfe868fcc20d3266"
+  url "https://github.com/block/sessh/releases/download/v0.4.0/sessh-0.4.0.tar.gz"
+  sha256 "f36db73097ab88c87f3ff9a1f0ddb803249a9fe28d00a636343913ed9991c103"
   license "Apache-2.0"
-  version "0.3.0"
-
-  depends_on "python@3.14"
+  version "0.4.0"
 
   def install
-    libexec.install "sessh"
-    (bin/"sessh").write <<~SH
-      #!/bin/sh
-      exec "#{Formula["python@3.14"].opt_libexec}/bin/python" "#{libexec}/sessh" "$@"
-    SH
-    chmod 0755, bin/"sessh"
+    bin.install "bin/sessh"
+    libexec.install "libexec/sessh"
   end
 
   test do
