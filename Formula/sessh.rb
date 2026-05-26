@@ -5,10 +5,10 @@
 class Sessh < Formula
   desc "SSH with seamless connection recovery"
   homepage "https://github.com/block/sessh"
-  url "https://github.com/block/sessh/releases/download/v0.4.0/sessh-0.4.0.tar.gz"
-  sha256 "f36db73097ab88c87f3ff9a1f0ddb803249a9fe28d00a636343913ed9991c103"
+  url "https://github.com/block/sessh/releases/download/v0.5.0/sessh-0.5.0.tar.gz"
+  sha256 "f78a0126245a2db44fcb734cf1a0a88046e6c3c57286dd80c6fb99cba7a22ec5"
   license "Apache-2.0"
-  version "0.4.0"
+  version "0.5.0"
 
   def install
     bin.install "bin/sessh"
