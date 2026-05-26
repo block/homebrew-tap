@@ -11,11 +11,12 @@ class Sessh < Formula
   version "0.4.0"
 
   def install
-    bin.install "bin/sessh"
+    bin.install "bin/sessh", "bin/sesshmux"
     libexec.install "libexec/sessh"
   end
 
   test do
     assert_match "sessh #{version}", shell_output("#{bin}/sessh --version")
+    assert_match "sesshmux #{version}", shell_output("#{bin}/sesshmux --version")
   end
 end
