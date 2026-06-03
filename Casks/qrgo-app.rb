@@ -16,6 +16,17 @@ cask "qrgo-app" do
 
   app "QRGo.app"
 
+  postflight do
+    system_command "/usr/bin/perl",
+                   args:         [
+                     "-e",
+                     "alarm 10; exec @ARGV",
+                     "#{appdir}/QRGo.app/Contents/MacOS/QRGo",
+                     "--reconcile-login-item",
+                   ],
+                   must_succeed: false
+  end
+
   uninstall launchctl: "com.block.qrgo.menubar",
             quit:      "com.block.qrgo",
             delete:    "~/Library/LaunchAgents/com.block.qrgo.menubar.plist"
