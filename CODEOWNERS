@@ -19,3 +19,4 @@ Formula/stoic.rb @tcmulcahy
 
 # Cask-specific owners.
 Casks/penpal.rb @loganj
+Casks/qrgo-app.rb @afollestad
