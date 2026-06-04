@@ -74,6 +74,24 @@ class BumpFormulaAndPrScriptTests(unittest.TestCase):
             )
         )
 
+    def write_multi_asset_formula(self, formula_name: str, jar_sha: str, launcher_sha: str) -> None:
+        (self._sandbox / "Formula" / f"{formula_name}.rb").write_text(
+            textwrap.dedent(
+                f"""\
+                class {formula_name.capitalize()} < Formula
+                  url "https://github.com/block/{formula_name}/releases/download/v2026.05.22/{formula_name}.jar"
+                  sha256 "{jar_sha}"
+                  version "2026.05.22"
+
+                  resource "launcher" do
+                    url "https://github.com/block/{formula_name}/releases/download/v2026.05.22/{formula_name}"
+                    sha256 "{launcher_sha}"
+                  end
+                end
+                """
+            )
+        )
+
     def load_script_module(self):
         spec = importlib.util.spec_from_file_location("bump_and_pr", ORCHESTRATOR_SCRIPT)
         self.assertIsNotNone(spec)
@@ -191,6 +209,13 @@ class BumpFormulaAndPrScriptTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("Missing required environment variable: GH_TOKEN", result.stderr)
 
+    def test_derive_new_version_accepts_date_patch_tags(self) -> None:
+        module = self.load_script_module()
+
+        self.assertEqual(module.derive_new_version("v2026.05.04.1"), "2026.05.04.1")
+        self.assertEqual(module.derive_new_version("v2.9"), "2.9")
+        self.assertEqual(module.derive_new_version("release-v1"), "release-v1")
+
     def test_single_arch_requires_artifact_url(self) -> None:
         self.write_formula("demo", "e" * 64)
 
@@ -271,6 +296,42 @@ class BumpFormulaAndPrScriptTests(unittest.TestCase):
         self.assertIn("d" * 64, pr_body)
         self.assertIn("e" * 64, pr_body)
         self.assertNotIn("Artifact: ", pr_body)
+
+    def test_multi_asset_formula_updates_resource_without_artifact_url(self) -> None:
+        self.write_multi_asset_formula("demo", "b" * 64, "c" * 64)
+        module = self.load_script_module()
+
+        new_jar_url = "https://github.com/block/demo/releases/download/v2026.05.29/demo.jar"
+        new_launcher_url = "https://github.com/block/demo/releases/download/v2026.05.29/demo"
+        expected_artifacts = [
+            (new_jar_url, "d" * 64),
+            (new_launcher_url, "e" * 64),
+        ]
+        sha_lookup = {url: sha for url, sha in expected_artifacts}
+
+        old_cwd = pathlib.Path.cwd()
+        os.chdir(self._sandbox)
+        try:
+            with mock.patch.object(module, "resolve_sha256", side_effect=lambda _sha, url: sha_lookup[url]):
+                old_tag, artifacts = module.bump_formula_file(
+                    formula_name="demo",
+                    new_version="2026.05.29",
+                    new_tag="v2026.05.29",
+                    artifact_url="",
+                    input_sha256="",
+                )
+        finally:
+            os.chdir(old_cwd)
+
+        self.assertEqual(old_tag, "v2026.05.22")
+        self.assertEqual(artifacts, expected_artifacts)
+
+        formula_contents = (self._sandbox / "Formula" / "demo.rb").read_text()
+        self.assertIn(f'url "{new_jar_url}"', formula_contents)
+        self.assertIn(f'url "{new_launcher_url}"', formula_contents)
+        self.assertIn(f'sha256 "{expected_artifacts[0][1]}"', formula_contents)
+        self.assertIn(f'sha256 "{expected_artifacts[1][1]}"', formula_contents)
+        self.assertIn('version "2026.05.29"', formula_contents)
 
     def test_compute_sha256_surfaces_download_errors(self) -> None:
         module = self.load_script_module()

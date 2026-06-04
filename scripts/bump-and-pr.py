@@ -47,7 +47,7 @@ def require_env(name: str) -> str:
 
 
 def derive_new_version(tag: str) -> str:
-    match = re.search(r"([0-9]+\.[0-9]+\.[0-9]+)$", tag)
+    match = re.search(r"([0-9]+(?:\.[0-9]+)+)$", tag)
     return match.group(1) if match else tag
 
 
