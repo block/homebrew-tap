@@ -2,9 +2,9 @@
 # Avoid manual edits to `url`, `sha256`, and `version`; the bump workflow rewrites them.
 
 cask "qrgo-app" do
-  version "1.3.7"
-  url "https://github.com/block/qrgo/releases/download/1.3.7/QRGo-1.3.7-arm64.zip"
-  sha256 "348a1af3de49ed3c6f87318456a0832f7522e663c70bba11a8bcb17eccf23396"
+  version "1.3.8"
+  url "https://github.com/block/qrgo/releases/download/1.3.8/QRGo-1.3.8-arm64.zip"
+  sha256 "28cd40a2db309c3c868e0f11252a037840979afcdad473feea8d4698ba76ffa9"
 
   name "QRGo"
   desc "Menu bar QR code scanner for iOS Simulator and Android Emulator"
