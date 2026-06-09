@@ -16,6 +16,7 @@ Formula/qrgo.rb @afollestad
 Formula/radiography.rb @tcmulcahy @zach-klippenstein
 Formula/spirit.rb @aparajon
 Formula/stoic.rb @tcmulcahy
+Formula/trailblaze.rb @handstandsam @tcmulcahy
 
 # Cask-specific owners.
 Casks/penpal.rb @loganj
