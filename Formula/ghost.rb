@@ -5,10 +5,10 @@
 class Ghost < Formula
   desc "Product-surface composition fingerprints, checks, review, and comparison"
   homepage "https://github.com/block/ghost"
-  url "https://github.com/block/ghost/releases/download/anarchitecture-ghost@0.11.1/anarchitecture-ghost-0.11.1.tgz"
-  sha256 "940bb6a9008598a11e70a0ee67753a722770ef75099e2711e46de52a73a5e5b6"
+  url "https://github.com/block/ghost/releases/download/anarchitecture-ghost@0.11.2/anarchitecture-ghost-0.11.2.tgz"
+  sha256 "94e4079396f8ac93f427be573e28223a6638314a485ea63d88b92a1f640f26f9"
   license "Apache-2.0"
-  version "0.11.1"
+  version "0.11.2"
 
   depends_on "node"
 
