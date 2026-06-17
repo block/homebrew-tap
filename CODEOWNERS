@@ -11,6 +11,7 @@
 Formula/aittributor.rb @alecthomas
 Formula/anchors.rb @loganj
 Formula/francis.rb @tcmulcahy
+Formula/ghost.rb @chailandau @nahiyankhan
 Formula/lhm.rb @alecthomas
 Formula/qrgo.rb @afollestad
 Formula/radiography.rb @tcmulcahy @zach-klippenstein
