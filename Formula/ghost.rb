@@ -20,7 +20,7 @@ class Ghost < Formula
     libexec.install Dir["package/*"]
 
     cd libexec do
-      system "npm", "install", "--omit=dev", "--ignore-scripts", "--no-audit", "--no-fund"
+      system "npm", "install", *std_npm_args(prefix: false), "--omit=dev", "--no-audit", "--no-fund"
     end
 
     (libexec/"dist/bin.js").chmod 0755
@@ -30,5 +30,6 @@ class Ghost < Formula
   test do
     assert_path_exists bin/"ghost"
     assert_predicate bin/"ghost", :executable?
+    assert_match "ghost/#{version}", shell_output("#{bin}/ghost --version")
   end
 end
