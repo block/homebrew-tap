@@ -13,15 +13,11 @@ class Ghost < Formula
   depends_on "node"
 
   def install
-    # The release artifact is the published npm tarball, which extracts to a
-    # `package/` directory containing the built `dist/` and `package.json`.
-    # Ship those into libexec, install the (pure-JS) runtime deps, and link
-    # the CLI entrypoint onto the PATH.
-    libexec.install Dir["package/*"]
-
-    cd libexec do
-      system "npm", "install", *std_npm_args(prefix: false), "--omit=dev", "--no-audit", "--no-fund"
-    end
+    # The GitHub release tarball already includes dist/ and node_modules/.
+    # Homebrew may run install from either the archive root or the package/
+    # directory, so copy whichever directory contains the package contents.
+    package_root = Dir.exist?("package") ? "package" : "."
+    libexec.install Dir["#{package_root}/*"]
 
     (libexec/"dist/bin.js").chmod 0755
     bin.install_symlink libexec/"dist/bin.js" => "ghost"
