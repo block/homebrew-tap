@@ -12,7 +12,7 @@ cask "qrgo-app" do
 
   depends_on arch: :arm64
   depends_on formula: "block/tap/qrgo"
-  depends_on macos: ">= :monterey"
+  depends_on macos: :monterey
 
   app "QRGo.app"
 
