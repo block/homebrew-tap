@@ -5,10 +5,10 @@
 class Qrgo < Formula
   desc "A CLI utility for screen-capturing a QR code and launching it in an Android emulator or iOS simulator."
   homepage "https://github.com/block/qrgo"
-  url "https://github.com/block/qrgo/releases/download/1.3.8/qrgo-release.tar.gz"
-  sha256 "1e43c056f6ad7f98329d663f0df34b7770d4d6bf29f9558f445d7305751aca47"
+  url "https://github.com/block/qrgo/releases/download/1.4.0/qrgo-release.tar.gz"
+  sha256 "1a23eb3fe342a5ea229a30f3bfddc7d2b89f80f46b357d3e209b33a75fcb2bff"
   license "Apache-2.0"
-  version "1.3.8"
+  version "1.4.0"
 
   def install
     libexec.install Dir["*"]
