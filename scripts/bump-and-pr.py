@@ -149,6 +149,28 @@ def run_command(args: list[str], *, capture_output: bool = False) -> subprocess.
     return result
 
 
+def ensure_label_exists(label: str, pr_repo: str) -> None:
+    existing = run_command(
+        [
+            "gh",
+            "label",
+            "list",
+            "--repo",
+            pr_repo,
+            "--search",
+            label,
+            "--json",
+            "name",
+            "--jq",
+            ".[].name",
+        ],
+        capture_output=True,
+    ).stdout.splitlines()
+    if label in existing:
+        return
+    run_command(["gh", "label", "create", label, "--repo", pr_repo], capture_output=True)
+
+
 def create_or_update_pr(
     *,
     branch: str,
@@ -158,6 +180,7 @@ def create_or_update_pr(
     pr_base: str,
     pr_repo: str,
     change_kind: str,
+    label: str,
 ) -> None:
     change_kind_capitalized = change_kind.capitalize()
 
@@ -200,8 +223,12 @@ def create_or_update_pr(
             capture_output=True,
         ).stdout.strip()
 
+        ensure_label_exists(label, pr_repo)
+
         if existing_pr and existing_pr != "null":
-            run_command(["gh", "pr", "edit", existing_pr, "--title", pr_title, "--body-file", body_file_path])
+            run_command(
+                ["gh", "pr", "edit", existing_pr, "--title", pr_title, "--body-file", body_file_path, "--add-label", label]
+            )
             print(f"Pull request updated: {existing_pr}")
             return
 
@@ -220,6 +247,8 @@ def create_or_update_pr(
                 pr_title,
                 "--body-file",
                 body_file_path,
+                "--label",
+                label,
             ],
             capture_output=True,
         ).stdout.strip()
@@ -345,6 +374,7 @@ def main() -> None:
         pr_base=values["PR_BASE"],
         pr_repo=values["PR_REPO"],
         change_kind=bump_type,
+        label=bump_name,
     )
 
 

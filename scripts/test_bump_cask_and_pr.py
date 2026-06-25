@@ -126,6 +126,39 @@ class BumpCaskAndPrScriptTests(unittest.TestCase):
         self.assertTrue(any(command.startswith("gh pr edit ") for command in commands))
         self.assertFalse(any(command.startswith("gh pr create ") for command in commands))
 
+    def test_label_created_and_added_on_pr_create(self) -> None:
+        self.write_cask("demo", "b" * 64)
+
+        result = self.run_script()
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+
+        commands = self.read_commands()
+        self.assertIn("gh label list --repo block/homebrew-tap --search demo --json name --jq .[].name", commands)
+        self.assertIn("gh label create demo --repo block/homebrew-tap", commands)
+        self.assertTrue(any(c.startswith("gh pr create ") and c.endswith(" --label demo") for c in commands))
+
+    def test_existing_label_is_not_recreated(self) -> None:
+        self.write_cask("demo", "b" * 64)
+
+        result = self.run_script(FAKE_EXISTING_LABELS="demo")
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+
+        commands = self.read_commands()
+        self.assertFalse(any(c.startswith("gh label create ") for c in commands))
+        self.assertTrue(any(c.startswith("gh pr create ") and c.endswith(" --label demo") for c in commands))
+
+    def test_label_added_on_pr_edit(self) -> None:
+        self.write_cask("demo", "b" * 64)
+
+        result = self.run_script(FAKE_EXISTING_PR_URL="https://github.com/block/homebrew-tap/pull/901")
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+
+        commands = self.read_commands()
+        self.assertTrue(any(c.startswith("gh pr edit ") and c.endswith(" --add-label demo") for c in commands))
+
     def test_no_changes_skips_pr(self) -> None:
         self.write_cask("demo", "b" * 64)
 
