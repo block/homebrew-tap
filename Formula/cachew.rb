@@ -2,25 +2,25 @@ class Cachew < Formula
   desc "Tiered, protocol-aware, caching HTTP proxy for software engineering infrastructure"
   homepage "https://github.com/block/cachew"
   license "Apache-2.0"
-  version "0.1.0"
+  version "0.1.1"
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/block/cachew/releases/download/v0.1.0/cachew-darwin-arm64.tar.gz"
-      sha256 "c8253639e834aeffda9de8edb3ec73ab5ec501016e03d0a6ffa6848bb061c6ab"
+      url "https://github.com/block/cachew/releases/download/v0.1.1/cachew-darwin-arm64.tar.gz"
+      sha256 "8f93d4fdd7f3bf90d6550a9749a4de38f90679da991f20ed15a93cca3ec1bfe3"
     else
-      url "https://github.com/block/cachew/releases/download/v0.1.0/cachew-darwin-amd64.tar.gz"
-      sha256 "a9feeb5e3c3b78c0550d1152faee7d976aa2319a48a43c6a246bff606b516073"
+      url "https://github.com/block/cachew/releases/download/v0.1.1/cachew-darwin-amd64.tar.gz"
+      sha256 "28abae022d53a492907e08a0b841e711e1302c382b49c6210478fa507ea465c4"
     end
   end
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/block/cachew/releases/download/v0.1.0/cachew-linux-arm64.tar.gz"
-      sha256 "690935c7e9f8481520f35c2568d72bff2ade8d52172794bb8710588c13656b40"
+      url "https://github.com/block/cachew/releases/download/v0.1.1/cachew-linux-arm64.tar.gz"
+      sha256 "47d723a419e513279b88328d838599b6681f9d39eb31cf2ad7807c99fb7b3d75"
     else
-      url "https://github.com/block/cachew/releases/download/v0.1.0/cachew-linux-amd64.tar.gz"
-      sha256 "ffdc8ace9c840eca9dbf01597c86131a10595dae0bd962a2698cf5b5ebd29c62"
+      url "https://github.com/block/cachew/releases/download/v0.1.1/cachew-linux-amd64.tar.gz"
+      sha256 "1a40e9e9f2c340026cc04a9cb991d0828244e1606ada51e46f7227343f937add"
     end
   end
 
