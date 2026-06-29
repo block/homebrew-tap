@@ -11,6 +11,11 @@ class Trailblaze < Formula
   version "2026.06.24"
 
   depends_on "openjdk@17"
+  # `ffmpeg-full` (not plain `ffmpeg`) so `trailblaze report --webp` has the `libwebp_anim`
+  # encoder: homebrew-core's `ffmpeg` is NOT built against libwebp. ffmpeg-full is a
+  # superset, so it also covers `--gif` and `--video` (libx264). It's keg-only, so the
+  # wrapper below prepends its bin to PATH; see https://github.com/block/trailblaze/issues/174.
+  depends_on "ffmpeg-full"
 
   on_macos do
     depends_on arch: :arm64
@@ -26,11 +31,23 @@ class Trailblaze < Formula
     libexec.install resource("launcher").cached_download => "trailblaze"
     (libexec/"trailblaze").chmod 0755
 
-    (bin/"trailblaze").write_env_script libexec/"trailblaze",
-                                        Language::Java.overridable_java_home_env("17")
+    env = Language::Java.overridable_java_home_env("17")
+    # Prepend keg-only ffmpeg-full's bin so the wrapper finds the libwebp-capable ffmpeg
+    # (see #174). write_env_script writes PATH="…:$PATH"; bash expands $PATH at runtime, so
+    # the user's PATH is preserved, and prepending wins over a plain `ffmpeg` lacking libwebp.
+    env["PATH"] = "#{Formula["ffmpeg-full"].opt_bin}:$PATH"
+
+    (bin/"trailblaze").write_env_script libexec/"trailblaze", env
   end
 
   test do
     assert_match "Trailblaze v#{version}", shell_output("BLAZE_CDS=0 #{bin}/trailblaze --version")
+
+    # The wrapper must carry ffmpeg-full's opt_bin on PATH so `report --webp/--gif/--video`
+    # finds a libwebp_anim-capable ffmpeg (#174). Assert the generated launcher's PATH entry
+    # and that the bundled ffmpeg actually exposes the libwebp_anim encoder.
+    assert_match Formula["ffmpeg-full"].opt_bin.to_s, (bin/"trailblaze").read
+    assert_match "libwebp_anim",
+                 shell_output("#{Formula["ffmpeg-full"].opt_bin}/ffmpeg -hide_banner -encoders 2>&1")
   end
 end
