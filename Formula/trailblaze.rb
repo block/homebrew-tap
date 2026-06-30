@@ -32,9 +32,9 @@ class Trailblaze < Formula
     (libexec/"trailblaze").chmod 0755
 
     env = Language::Java.overridable_java_home_env("17")
-    # Prepend keg-only ffmpeg-full's bin so the wrapper finds the libwebp-capable ffmpeg
-    # (see #174). write_env_script writes PATH="…:$PATH"; bash expands $PATH at runtime, so
-    # the user's PATH is preserved, and prepending wins over a plain `ffmpeg` lacking libwebp.
+    # ffmpeg-full is keg-only, so it's not on PATH — but trailblaze shells out to `ffmpeg`
+    # at runtime. Put ffmpeg-full's bin on PATH for the trailblaze wrapper only, prepended
+    # so it beats any plain `ffmpeg` (which lacks the libwebp encoder --webp needs). See #174.
     env["PATH"] = "#{Formula["ffmpeg-full"].opt_bin}:$PATH"
 
     (bin/"trailblaze").write_env_script libexec/"trailblaze", env
