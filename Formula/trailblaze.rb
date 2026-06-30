@@ -11,11 +11,16 @@ class Trailblaze < Formula
   version "2026.06.24"
 
   depends_on "openjdk@17"
-  # `ffmpeg-full` (not plain `ffmpeg`) so `trailblaze report --webp` has the `libwebp_anim`
-  # encoder: homebrew-core's `ffmpeg` is NOT built against libwebp. ffmpeg-full is a
-  # superset, so it also covers `--gif` and `--video` (libx264). It's keg-only, so the
-  # wrapper below prepends its bin to PATH; see https://github.com/block/trailblaze/issues/174.
-  depends_on "ffmpeg-full"
+  # `trailblaze report` shells out to two small CLIs at runtime for its animated exports:
+  #   * ffmpeg   — backs --gif and --video (libx264); homebrew-core's plain ffmpeg already
+  #                ships both, no special build needed.
+  #   * img2webp — backs --webp, from libwebp's own tools (the `webp` formula). Plain ffmpeg
+  #                is NOT built against libwebp, so the report exporter assembles animated
+  #                WebP with img2webp/cwebp/webpmux rather than an ffmpeg encoder.
+  # Both formulae are small and non-keg-only, so their binaries land on PATH automatically —
+  # which is why the launcher below needs no PATH manipulation. See block/trailblaze#174.
+  depends_on "ffmpeg"
+  depends_on "webp"
 
   on_macos do
     depends_on arch: :arm64
@@ -31,23 +36,17 @@ class Trailblaze < Formula
     libexec.install resource("launcher").cached_download => "trailblaze"
     (libexec/"trailblaze").chmod 0755
 
-    env = Language::Java.overridable_java_home_env("17")
-    # ffmpeg-full is keg-only, so it's not on PATH — but trailblaze shells out to `ffmpeg`
-    # at runtime. Put ffmpeg-full's bin on PATH for the trailblaze wrapper only, prepended
-    # so it beats any plain `ffmpeg` (which lacks the libwebp encoder --webp needs). See #174.
-    env["PATH"] = "#{Formula["ffmpeg-full"].opt_bin}:$PATH"
-
-    (bin/"trailblaze").write_env_script libexec/"trailblaze", env
+    (bin/"trailblaze").write_env_script libexec/"trailblaze",
+                                        Language::Java.overridable_java_home_env("17")
   end
 
   test do
     assert_match "Trailblaze v#{version}", shell_output("BLAZE_CDS=0 #{bin}/trailblaze --version")
 
-    # The wrapper must carry ffmpeg-full's opt_bin on PATH so `report --webp/--gif/--video`
-    # finds a libwebp_anim-capable ffmpeg (#174). Assert the generated launcher's PATH entry
-    # and that the bundled ffmpeg actually exposes the libwebp_anim encoder.
-    assert_match Formula["ffmpeg-full"].opt_bin.to_s, (bin/"trailblaze").read
-    assert_match "libwebp_anim",
-                 shell_output("#{Formula["ffmpeg-full"].opt_bin}/ffmpeg -hide_banner -encoders 2>&1")
+    # Guard the #174 regression class: the CLIs `trailblaze report` shells out to for
+    # animated exports must be installed. img2webp (from `webp`) backs --webp; ffmpeg backs
+    # --gif/--video. Both deps are non-keg-only, so these binaries resolve on PATH.
+    assert_predicate Formula["webp"].opt_bin/"img2webp", :exist?
+    assert_predicate Formula["ffmpeg"].opt_bin/"ffmpeg", :exist?
   end
 end
