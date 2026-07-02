@@ -2,25 +2,25 @@ class Lhm < Formula
   desc "Merges global and repo lefthook configs"
   homepage "https://github.com/block/lhm"
   license "Apache-2.0"
-  version "0.12.0"
+  version "0.13.0"
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/block/lhm/releases/download/v0.12.0/lhm-aarch64-apple-darwin.bz2"
-      sha256 "9b69278ce447f2793167e822aa684234ae4ccfb3f3580162509645c69234229b"
+      url "https://github.com/block/lhm/releases/download/v0.13.0/lhm-aarch64-apple-darwin.bz2"
+      sha256 "b20640fc91fe21fb9f31a6cc3bc956fe8c2d247f711bb4af19e941044787b36a"
     else
-      url "https://github.com/block/lhm/releases/download/v0.12.0/lhm-x86_64-apple-darwin.bz2"
-      sha256 "2b975e4968f112e5db9dab589e58d09997639ca327ba15009e388677a5f37d08"
+      url "https://github.com/block/lhm/releases/download/v0.13.0/lhm-x86_64-apple-darwin.bz2"
+      sha256 "1222fc4accd7989b84d60ce7dc3b85a8e348cc5e2e281834d08936292e915bc0"
     end
   end
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/block/lhm/releases/download/v0.12.0/lhm-aarch64-unknown-linux-gnu.bz2"
-      sha256 "818f6e5e7bf32eb12585962c2401414a1319a8d1aed5465537fb6bf34ec16da4"
+      url "https://github.com/block/lhm/releases/download/v0.13.0/lhm-aarch64-unknown-linux-gnu.bz2"
+      sha256 "101f24028ff5941c5ca1fa5974d6e6f7a213b408f4cdf48cd084b1885a36a6a4"
     else
-      url "https://github.com/block/lhm/releases/download/v0.12.0/lhm-x86_64-unknown-linux-gnu.bz2"
-      sha256 "f4743db21dccfb67c841865d952bbe93cdda58c9bdda6a2d025dca623632e80b"
+      url "https://github.com/block/lhm/releases/download/v0.13.0/lhm-x86_64-unknown-linux-gnu.bz2"
+      sha256 "bd6eac5b984bea1aaa4b121918cdf0cfa33808a59223b5b0b71e4b340104dfd9"
     end
   end
 
