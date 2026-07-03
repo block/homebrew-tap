@@ -5,10 +5,10 @@
 class Trailblaze < Formula
   desc "AI-powered UI testing framework for iOS, Android, and Web"
   homepage "https://github.com/block/trailblaze"
-  url "https://github.com/block/trailblaze/releases/download/v2026.07.02/trailblaze.jar"
-  sha256 "87af1e7caa98a44b44fa0fcf79510b6c34dd1269dbc6f58f52d97a116721ef63"
+  url "https://github.com/block/trailblaze/releases/download/v2026.07.02.1/trailblaze.jar"
+  sha256 "601574a9084cbf4fd9f82226fa925686a04026825180ebb2d1d77d686b54c72a"
   license "Apache-2.0"
-  version "2026.07.02"
+  version "2026.07.02.1"
 
   depends_on "openjdk@21"
   # bun is the JS/TS runtime Trailblaze uses to type-check and analyze TypeScript scripted
@@ -29,7 +29,7 @@ class Trailblaze < Formula
   end
 
   resource "launcher" do
-    url "https://github.com/block/trailblaze/releases/download/v2026.07.02/trailblaze"
+    url "https://github.com/block/trailblaze/releases/download/v2026.07.02.1/trailblaze"
     sha256 "40187d94748417e74f93eac8fc15afd56381d0c097c3e0dfda9589a08df2cdf1"
   end
 
