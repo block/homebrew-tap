@@ -18,13 +18,17 @@ import brew_utils
 
 
 compute_sha256 = brew_utils.compute_sha256
+expand_cask_url = brew_utils.expand_cask_url
 extract_all_fields = brew_utils.extract_all_fields
 extract_field = brew_utils.extract_field
 extract_release_tag_from_url = brew_utils.extract_release_tag_from_url
+extract_stanza_values = brew_utils.extract_stanza_values
 fail = brew_utils.fail
+is_multi_arch_cask = brew_utils.is_multi_arch_cask
 replace_nth_field = brew_utils.replace_nth_field
 resolve_sha256 = brew_utils.resolve_sha256
 update_fields = brew_utils.update_fields
+update_sha256_key = brew_utils.update_sha256_key
 validate_artifact_url = brew_utils.validate_artifact_url
 
 
@@ -102,6 +106,42 @@ def bump_formula_file(
     return old_tag, artifacts
 
 
+# Maps (arch_key, os_key) in the cask stanza to the sha256 parameter key.
+_ARCH_OS_TO_SHA256_KEY: dict[tuple[str, str], str] = {
+    ("arm", "macos"):   "arm",
+    ("intel", "macos"): "intel",
+    ("arm", "linux"):   "arm64_linux",
+    ("intel", "linux"): "x86_64_linux",
+}
+
+
+def bump_multi_arch_cask_file(
+    *,
+    cask_file: Path,
+    contents: str,
+    new_version: str,
+) -> tuple[str, list[tuple[str, str]]]:
+    archs = extract_stanza_values(contents, "arch")
+    oses = extract_stanza_values(contents, "os")
+    url_template = extract_field(contents, "url", cask_file)
+    old_version = extract_field(contents, "version", cask_file)
+    old_tag = f"v{old_version}"
+
+    artifacts: list[tuple[str, str]] = []
+    for (arch_key, os_key), sha256_key in _ARCH_OS_TO_SHA256_KEY.items():
+        if arch_key not in archs or os_key not in oses:
+            continue
+        url = expand_cask_url(url_template, version=new_version, arch=archs[arch_key], os=oses[os_key])
+        validate_artifact_url(url)
+        sha256 = resolve_sha256(None, url)
+        contents = update_sha256_key(contents, sha256_key, sha256, cask_file)
+        artifacts.append((url, sha256))
+
+    contents = update_fields(contents, {"version": new_version}, cask_file)
+    cask_file.write_text(contents)
+    return old_tag, artifacts
+
+
 def bump_cask_file(
     *,
     cask_name: str,
@@ -114,8 +154,17 @@ def bump_cask_file(
         fail(f"{cask_file} does not exist")
 
     contents = cask_file.read_text()
-    old_tag = extract_release_tag_from_url(extract_field(contents, "url", cask_file))
 
+    if is_multi_arch_cask(contents):
+        return bump_multi_arch_cask_file(
+            cask_file=cask_file,
+            contents=contents,
+            new_version=new_version,
+        )
+
+    if not artifact_url:
+        fail("Missing required environment variable: ARTIFACT_URL")
+    old_tag = extract_release_tag_from_url(extract_field(contents, "url", cask_file))
     validate_artifact_url(artifact_url)
     sha256 = resolve_sha256(input_sha256 or None, artifact_url)
     contents = update_fields(
@@ -352,8 +401,6 @@ def main() -> None:
         )
         install_command = f"brew install block/tap/{bump_name}"
     else:
-        if not artifact_url:
-            fail("Missing required environment variable: ARTIFACT_URL")
         old_tag, artifacts = bump_cask_file(
             cask_name=bump_name,
             new_version=new_version,

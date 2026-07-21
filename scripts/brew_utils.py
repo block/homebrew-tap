@@ -93,3 +93,38 @@ def resolve_sha256(sha256: str | None, artifact_url: str) -> str:
 def extract_release_tag_from_url(url: str) -> str:
     tag_match = re.search(r"/releases/download/([^/]+(?:/[^/]+)?)/", url)
     return tag_match.group(1) if tag_match else "unknown"
+
+
+def is_multi_arch_cask(contents: str) -> bool:
+    """Return True if the cask uses a multi-key sha256 stanza (arm:, intel:, etc.)."""
+    return bool(re.search(r"^\s*sha256\s+\w+:", contents, re.MULTILINE))
+
+
+def extract_stanza_values(contents: str, stanza: str) -> dict[str, str]:
+    """Extract key: "value" pairs from a single-line stanza, e.g. arch or os."""
+    match = re.search(rf"^\s*{stanza}\s+(.+)$", contents, re.MULTILINE)
+    if not match:
+        return {}
+    return dict(re.findall(r'(\w+):\s+"([^"]+)"', match.group(1)))
+
+
+def expand_cask_url(url_template: str, *, version: str, arch: str, os: str) -> str:
+    """Expand Ruby-style #{...} interpolations in a cask URL template."""
+    return (
+        url_template.replace("#{version}", version)
+        .replace("#{arch}", arch)
+        .replace("#{os}", os)
+    )
+
+
+def update_sha256_key(contents: str, key: str, new_hash: str, rb_file: Path) -> str:
+    """Update a single named sha256 key within a multi-key sha256 stanza."""
+    updated, count = re.subn(
+        rf"({re.escape(key)}:\s+\")[0-9a-f]{{64}}(\")",
+        rf"\g<1>{new_hash}\2",
+        contents,
+        count=1,
+    )
+    if count != 1:
+        fail(f"Unable to update sha256 {key}: in {rb_file}")
+    return updated
