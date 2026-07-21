@@ -26,6 +26,12 @@ class Trailblaze < Formula
 
   on_macos do
     depends_on arch: :arm64
+    # baguette powers live iOS Simulator H.264 streaming in the /devices viewer and Trail Runner
+    # mirror; it's Apple-Silicon + macOS 26 (Tahoe)-only. Gate it to where it can install — on
+    # older macOS the iOS stream falls back to JPEG polling, and it's optional at runtime anyway.
+    on_tahoe :or_newer do
+      depends_on "baguette"
+    end
   end
 
   resource "launcher" do
