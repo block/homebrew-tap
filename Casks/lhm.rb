@@ -18,4 +18,14 @@ cask "lhm" do
   homepage "https://github.com/block/lhm"
 
   binary "lhm-#{arch}-#{os}", target: "lhm"
+
+  # On macOS, Homebrew sets the flag `com.apple.quarantine` on the downloaded binaries.
+  # This step clears the flag.
+  on_macos do
+    postflight do
+      staged_path.glob("lhm-*").each do |binary|
+        system_command "/usr/bin/xattr", args: ["-d", "com.apple.quarantine", binary.to_s], must_succeed: false
+      end
+    end
+  end
 end
