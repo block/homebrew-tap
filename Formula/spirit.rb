@@ -10,6 +10,9 @@ class Spirit < Formula
   license "Apache-2.0"
   version "0.12.0"
 
+  depends_on arch: :arm64
+  depends_on :macos
+
   def install
     bin.install "spirit"
   end

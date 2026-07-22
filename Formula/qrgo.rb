@@ -10,6 +10,9 @@ class Qrgo < Formula
   license "Apache-2.0"
   version "1.4.1"
 
+  depends_on arch: :arm64
+  depends_on :macos
+
   def install
     libexec.install Dir["*"]
     bin.install_symlink libexec/"qrgo"
