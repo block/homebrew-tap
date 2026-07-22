@@ -1,22 +1,30 @@
-# Release metadata is managed by .github/workflows/bump-formula.yaml.
+# Release metadata is managed by .github/workflows/bump-cask.yaml.
 # Avoid manual edits to `url`, `sha256`, and `version`; the bump workflow rewrites them.
-# Run: gh workflow run bump-formula.yaml -f repo=block/sessh -f formula=sessh -f tag=<tag> -f artifact_url=<artifact_url> [-f sha256=<sha256>]
 
-class Sessh < Formula
+cask "sessh" do
+  version "0.6.0"
+  sha256 "023faab46bae8aca5900d8688d86076d45a5ed87cc9b0d1581213433ac1b3af4"
+
+  url "https://github.com/block/sessh/releases/download/v#{version}/sessh-#{version}.tar.gz"
+  name "Sessh"
   desc "SSH with seamless connection recovery"
   homepage "https://github.com/block/sessh"
-  url "https://github.com/block/sessh/releases/download/v0.6.0/sessh-0.6.0.tar.gz"
-  sha256 "023faab46bae8aca5900d8688d86076d45a5ed87cc9b0d1581213433ac1b3af4"
-  license "Apache-2.0"
-  version "0.6.0"
 
-  def install
-    bin.install "bin/sessh", "bin/sesshmux"
-    libexec.install "libexec/sessh"
-  end
+  binary "sessh-#{version}/bin/sessh"
+  binary "sessh-#{version}/bin/sesshmux"
 
-  test do
-    assert_match "sessh #{version}", shell_output("#{bin}/sessh --version")
-    assert_match "sesshmux #{version}", shell_output("#{bin}/sesshmux --version")
+  on_macos do
+    postflight do
+      binaries = [
+        staged_path/"sessh-#{version}/bin/sessh",
+        staged_path/"sessh-#{version}/bin/sesshmux",
+        *staged_path.glob("sessh-#{version}/libexec/sessh/sesshmux-macos-*"),
+      ]
+      binaries.each do |binary|
+        system_command "/usr/bin/xattr",
+                       args:         ["-d", "com.apple.quarantine", binary],
+                       must_succeed: false
+      end
+    end
   end
 end

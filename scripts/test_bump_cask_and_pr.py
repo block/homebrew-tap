@@ -49,6 +49,19 @@ class BumpCaskAndPrScriptTests(unittest.TestCase):
             )
         )
 
+    def write_versioned_url_cask(self, cask_name: str, sha256: str) -> None:
+        (self._sandbox / "Casks" / f"{cask_name}.rb").write_text(
+            textwrap.dedent(
+                f"""\
+                cask "{cask_name}" do
+                  version "0.1.0"
+                  sha256 "{sha256}"
+                  url "https://github.com/block/{cask_name}/releases/download/v#{{version}}/{cask_name}-#{{version}}.tar.gz"
+                end
+                """
+            )
+        )
+
     def run_script(self, **overrides: str | None) -> subprocess.CompletedProcess[str]:
         env = os.environ.copy()
         env.update(
@@ -125,6 +138,17 @@ class BumpCaskAndPrScriptTests(unittest.TestCase):
         commands = self.read_commands()
         self.assertTrue(any(command.startswith("gh pr edit ") for command in commands))
         self.assertFalse(any(command.startswith("gh pr create ") for command in commands))
+
+    def test_version_interpolation_is_preserved(self) -> None:
+        self.write_versioned_url_cask("demo", "b" * 64)
+
+        artifact_url = "https://github.com/block/demo/releases/download/v1.2.3/demo-1.2.3.tar.gz"
+        result = self.run_script(ARTIFACT_URL=artifact_url)
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        cask_contents = (self._sandbox / "Casks" / "demo.rb").read_text()
+        self.assertIn('url "https://github.com/block/demo/releases/download/v#{version}/demo-#{version}.tar.gz"', cask_contents)
+        self.assertIn("https://github.com/block/demo/compare/v0.1.0...demo-1.2.3", self._pr_body_log.read_text())
 
     def test_label_created_and_added_on_pr_create(self) -> None:
         self.write_cask("demo", "b" * 64)

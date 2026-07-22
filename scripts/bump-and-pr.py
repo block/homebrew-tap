@@ -114,15 +114,22 @@ def bump_cask_file(
         fail(f"{cask_file} does not exist")
 
     contents = cask_file.read_text()
-    old_tag = extract_release_tag_from_url(extract_field(contents, "url", cask_file))
+    old_version = extract_field(contents, "version", cask_file)
+    old_url = extract_field(contents, "url", cask_file)
+    old_tag = extract_release_tag_from_url(old_url.replace("#{version}", old_version))
 
     validate_artifact_url(artifact_url)
     sha256 = resolve_sha256(input_sha256 or None, artifact_url)
+    new_url = artifact_url
+    if "#{version}" in old_url:
+        if new_version not in artifact_url:
+            fail(f"Artifact URL does not contain cask version {new_version}: {artifact_url}")
+        new_url = artifact_url.replace(new_version, "#{version}")
     contents = update_fields(
         contents,
         {
             "version": new_version,
-            "url": artifact_url,
+            "url": new_url,
             "sha256": sha256,
         },
         cask_file,
@@ -328,6 +335,17 @@ def validate_bump_type(bump_type: str) -> None:
         fail(f"Unsupported BUMP_TYPE: {bump_type}")
 
 
+def resolve_bump_type(bump_type: str, bump_name: str) -> str:
+    if (
+        bump_type == "formula"
+        and not (Path("Formula") / f"{bump_name}.rb").exists()
+        and (Path("Casks") / f"{bump_name}.rb").exists()
+    ):
+        print(f"{bump_name} has migrated from a formula to a cask; bumping the cask.", file=sys.stderr)
+        return "cask"
+    return bump_type
+
+
 def main() -> None:
     values = {name: require_env(name) for name in REQUIRED_ENV_VARS}
 
@@ -337,6 +355,7 @@ def main() -> None:
     new_tag = values["NEW_TAG"]
 
     validate_bump_type(bump_type)
+    bump_type = resolve_bump_type(bump_type, bump_name)
 
     artifact_url = os.environ.get("ARTIFACT_URL", "")
     input_sha256 = os.environ.get("INPUT_SHA256", "")

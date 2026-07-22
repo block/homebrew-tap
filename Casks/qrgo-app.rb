@@ -3,15 +3,15 @@
 
 cask "qrgo-app" do
   version "1.4.1"
-  url "https://github.com/block/qrgo/releases/download/1.4.1/QRGo-1.4.1-arm64.zip"
   sha256 "7e8c8cb4023839f9c80136d0d773c3aec43f2de7a4ae3785bd80755ade804e53"
 
+  url "https://github.com/block/qrgo/releases/download/#{version}/QRGo-#{version}-arm64.zip"
   name "QRGo"
   desc "Menu bar QR code scanner for iOS Simulator and Android Emulator"
   homepage "https://github.com/block/qrgo"
 
   depends_on arch: :arm64
-  depends_on formula: "block/tap/qrgo"
+  depends_on cask: "block/tap/qrgo"
   depends_on macos: :monterey
 
   app "QRGo.app"

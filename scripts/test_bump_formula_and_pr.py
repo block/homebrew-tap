@@ -25,6 +25,7 @@ class BumpFormulaAndPrScriptTests(unittest.TestCase):
     def setUp(self) -> None:
         self._sandbox = pathlib.Path(tempfile.mkdtemp(prefix="bump-formula-and-pr-test."))
         (self._sandbox / "Formula").mkdir(parents=True, exist_ok=True)
+        (self._sandbox / "Casks").mkdir(parents=True, exist_ok=True)
 
         self._fake_bin = self._sandbox / "fake-bin"
         self._fake_bin.mkdir(parents=True, exist_ok=True)
@@ -87,6 +88,19 @@ class BumpFormulaAndPrScriptTests(unittest.TestCase):
                     url "https://github.com/block/{formula_name}/releases/download/v2026.05.22/{formula_name}"
                     sha256 "{launcher_sha}"
                   end
+                end
+                """
+            )
+        )
+
+    def write_cask(self, cask_name: str, sha256: str) -> None:
+        (self._sandbox / "Casks" / f"{cask_name}.rb").write_text(
+            textwrap.dedent(
+                f"""\
+                cask "{cask_name}" do
+                  version "0.1.0"
+                  sha256 "{sha256}"
+                  url "https://github.com/block/{cask_name}/releases/download/v0.1.0/{cask_name}-v0.1.0.tar.gz"
                 end
                 """
             )
@@ -164,6 +178,21 @@ class BumpFormulaAndPrScriptTests(unittest.TestCase):
         self.assertIn("Artifact: https://github.com/block/demo/releases/download/v1.2.3/demo-v1.2.3.tar.gz", pr_body)
         self.assertIn(f"SHA256: {expected_sha}", pr_body)
         self.assertIn("brew install block/tap/demo", pr_body)
+
+    def test_formula_dispatch_bumps_migrated_cask(self) -> None:
+        self.write_cask("demo", "b" * 64)
+
+        result = self.run_script()
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertIn("demo has migrated from a formula to a cask", result.stderr)
+
+        cask_contents = (self._sandbox / "Casks" / "demo.rb").read_text()
+        self.assertIn('version "1.2.3"', cask_contents)
+        self.assertIn(f'sha256 "{"a" * 64}"', cask_contents)
+
+        pr_body = self._pr_body_log.read_text()
+        self.assertIn("brew install --cask block/tap/demo", pr_body)
 
     def test_existing_pr_is_updated(self) -> None:
         self.write_formula("demo", "b" * 64)
