@@ -25,7 +25,7 @@ class Aittributor < Formula
   end
 
   def install
-    binary = buildpath.children.first
+    binary = buildpath.glob("aittributor-*").first
     binary.chmod 0755
     bin.install binary => "aittributor"
   end

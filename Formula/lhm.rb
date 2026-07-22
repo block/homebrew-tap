@@ -26,7 +26,7 @@ class Lhm < Formula
 
   def install
     # bz2 is auto-extracted by Homebrew; the resulting file needs to be renamed
-    binary = buildpath.children.first
+    binary = buildpath.glob("lhm-*").first
     binary.chmod 0755
     bin.install binary => "lhm"
   end
