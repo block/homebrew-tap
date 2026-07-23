@@ -19,6 +19,6 @@ class Qrgo < Formula
   end
 
   test do
-    system "\#{bin}/qrgo", "--help"
+    system bin/"qrgo", "--help"
   end
 end

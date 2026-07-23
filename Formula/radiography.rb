@@ -14,10 +14,10 @@ class Radiography < Formula
 
   def install
     libexec.install Dir["*"]
-    bin.install_symlink libexec/"radiography"
+    bin.write_exec_script libexec/"radiography"
   end
 
   test do
-    system "\#{bin}/radiography", "--help"
+    system bin/"radiography", "--help"
   end
 end

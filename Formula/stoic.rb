@@ -10,18 +10,29 @@ class Stoic < Formula
   license "Apache-2.0"
   version "0.9.1"
 
+  # Only macOS ARM64 uses the native binary; every JVM target needs OpenJDK.
+  on_macos do
+    on_intel do
+      depends_on "openjdk"
+    end
+  end
+
+  on_linux do
+    depends_on "openjdk"
+  end
+
   def install
     libexec.install Dir["*"]
 
-    # Use native binary for macOS ARM64, JVM version for everything else
+    # Only macOS ARM64 uses the native binary; all other targets use the JVM artifact.
     if OS.mac? && Hardware::CPU.arm?
       bin.install_symlink libexec/"bin/darwin-arm64/stoic"
     else
-      bin.install_symlink libexec/"bin/jvm/stoic"
+      bin.write_jar_script libexec/"jar/stoic-host-main.jar", "stoic"
     end
   end
 
   test do
-    system "\#{bin}/stoic", "--help"
+    system bin/"stoic", "--help"
   end
 end

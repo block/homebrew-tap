@@ -10,12 +10,14 @@ class Francis < Formula
   license "Apache-2.0"
   version "0.0.20"
 
+  depends_on "openjdk"
+
   def install
     libexec.install Dir["*"]
-    bin.install_symlink libexec/"bin/jvm/francis"
+    bin.write_jar_script libexec/"jar/francis.jar", "francis"
   end
 
   test do
-    system "\#{bin}/francis", "--help"
+    system bin/"francis", "--help"
   end
 end
