@@ -13,8 +13,8 @@ on:
         description: Release tag (for example, penpal-1.2.3)
         required: true
       artifact_url:
-        description: Full GitHub release artifact URL
-        required: true
+        description: Full GitHub release artifact URL (not required for multi-arch casks using url interpolation)
+        required: false
       sha256:
         description: SHA256 for the release artifact (optional)
         required: false
