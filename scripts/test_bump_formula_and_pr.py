@@ -47,7 +47,6 @@ class BumpFormulaAndPrScriptTests(unittest.TestCase):
                 class {formula_name.capitalize()} < Formula
                   url "https://github.com/block/{formula_name}/releases/download/v0.1.0/{formula_name}-v0.1.0.tar.gz"
                   sha256 "{sha256}"
-                  version "0.1.0"
                 end
                 """
             )
@@ -67,8 +66,6 @@ class BumpFormulaAndPrScriptTests(unittest.TestCase):
                     url "https://github.com/block/{formula_name}/releases/download/v0.1.0/{formula_name}-v0.1.0-amd64.tar.gz"
                     sha256 "{intel_sha}"
                   end
-
-                  version "0.1.0"
                 end
                 """
             )
@@ -81,7 +78,6 @@ class BumpFormulaAndPrScriptTests(unittest.TestCase):
                 class {formula_name.capitalize()} < Formula
                   url "https://github.com/block/{formula_name}/releases/download/v2026.05.22/{formula_name}.jar"
                   sha256 "{jar_sha}"
-                  version "2026.05.22"
 
                   resource "launcher" do
                     url "https://github.com/block/{formula_name}/releases/download/v2026.05.22/{formula_name}"
@@ -152,7 +148,8 @@ class BumpFormulaAndPrScriptTests(unittest.TestCase):
         formula_contents = (self._sandbox / "Formula" / "demo.rb").read_text()
         self.assertIn('url "https://github.com/block/demo/releases/download/v1.2.3/demo-v1.2.3.tar.gz"', formula_contents)
         self.assertIn(f'sha256 "{expected_sha}"', formula_contents)
-        self.assertIn('version "1.2.3"', formula_contents)
+        # Homebrew infers this version from the URL, so an explicit field would fail `brew audit` as redundant.
+        self.assertNotIn('version "', formula_contents)
 
         commands = self.read_commands()
         self.assertIn("git status --porcelain", commands)
@@ -257,6 +254,18 @@ class BumpFormulaAndPrScriptTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("--artifact-url is required for single-arch formulas", result.stderr)
 
+    def test_formula_bump_updates_an_existing_version_field(self) -> None:
+        self.write_formula("demo", "b" * 64)
+        formula_file = self._sandbox / "Formula" / "demo.rb"
+        formula_file.write_text(formula_file.read_text().replace("end\n", '  version "0.1.0"\nend\n'))
+
+        result = self.run_script()
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        formula_contents = formula_file.read_text()
+        self.assertNotIn('version "0.1.0"', formula_contents)
+        self.assertIn('version "1.2.3"', formula_contents)
+
     def test_fails_when_formula_sha256_cannot_be_read(self) -> None:
         (self._sandbox / "Formula" / "demo.rb").write_text(
             textwrap.dedent(
@@ -312,7 +321,7 @@ class BumpFormulaAndPrScriptTests(unittest.TestCase):
         self.assertIn(f'url "{new_intel_url}"', formula_contents)
         self.assertIn(f'sha256 "{expected_artifacts[0][1]}"', formula_contents)
         self.assertIn(f'sha256 "{expected_artifacts[1][1]}"', formula_contents)
-        self.assertIn('version "1.2.3"', formula_contents)
+        self.assertNotIn('version "', formula_contents)
 
         pr_body = module.make_pr_body(
             repo="block/demo",
@@ -364,7 +373,7 @@ class BumpFormulaAndPrScriptTests(unittest.TestCase):
         self.assertIn(f'url "{new_launcher_url}"', formula_contents)
         self.assertIn(f'sha256 "{expected_artifacts[0][1]}"', formula_contents)
         self.assertIn(f'sha256 "{expected_artifacts[1][1]}"', formula_contents)
-        self.assertIn('version "2026.05.29"', formula_contents)
+        self.assertNotIn('version "', formula_contents)
 
     def test_compute_sha256_surfaces_download_errors(self) -> None:
         module = self.load_script_module()
