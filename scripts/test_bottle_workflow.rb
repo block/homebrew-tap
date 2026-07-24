@@ -60,6 +60,32 @@ class FakeFormulaService
   end
 end
 
+# Verifies build command executables without installing, testing, or bottling a formula.
+class HomebrewExecutableProbeRunner < BottleWorkflow::CommandRunner
+  attr_reader :commands
+
+  def initialize
+    super
+    @commands = []
+  end
+
+  def run!(*command)
+    probe(command)
+  end
+
+  def success?(*command, quiet: false)
+    probe(command)
+    false
+  end
+
+  private
+
+  def probe(command)
+    @commands << command
+    capture!(command.first, "--version")
+  end
+end
+
 # Tests the workflow decisions and external command orchestration.
 class BottleWorkflowTest < Minitest::Test
   def setup
@@ -123,7 +149,8 @@ class BottleWorkflowTest < Minitest::Test
   def test_build_orders_formulae_and_runs_bottle_commands
     stoic = "block/tap/stoic"
     radiography = "block/tap/radiography"
-    runner = FakeRunner.new(successes: { ["brew", "list", "--formula", "--versions", radiography] => true })
+    brew = HOMEBREW_BREW_FILE.to_s
+    runner = FakeRunner.new(successes: { [brew, "list", "--formula", "--versions", radiography] => true })
     formula_service = FakeFormulaService.new(
       order:      [stoic, radiography],
       identities: {
@@ -139,23 +166,23 @@ class BottleWorkflowTest < Minitest::Test
     )
 
     assert_equal [
-      ["brew", "install", "--build-bottle", "--no-ask", stoic],
-      ["brew", "test", stoic],
+      [brew, "install", "--build-bottle", "--no-ask", stoic],
+      [brew, "test", stoic],
       [
-        "brew", "bottle", "--json",
+        brew, "bottle", "--json",
         "--root-url=https://github.com/block/homebrew-tap/releases/download/stoic-0.9.1", stoic
       ],
-      ["brew", "uninstall", "--formula", "--force", radiography],
-      ["brew", "install", "--build-bottle", "--no-ask", radiography],
-      ["brew", "test", radiography],
+      [brew, "uninstall", "--formula", "--force", radiography],
+      [brew, "install", "--build-bottle", "--no-ask", radiography],
+      [brew, "test", radiography],
       [
-        "brew", "bottle", "--json",
+        brew, "bottle", "--json",
         "--root-url=https://github.com/block/homebrew-tap/releases/download/radiography-2.9", radiography
       ],
     ], runner.run_commands
     assert_equal [
-      [["brew", "list", "--formula", "--versions", stoic], true],
-      [["brew", "list", "--formula", "--versions", radiography], true],
+      [[brew, "list", "--formula", "--versions", stoic], true],
+      [[brew, "list", "--formula", "--versions", radiography], true],
     ], runner.success_commands
   end
 
@@ -177,6 +204,25 @@ class BottleWorkflowTest < Minitest::Test
     assert_includes stdout, "Skipping block/tap/qrgo on this runner:"
     assert_includes stdout, "This formula requires macOS."
     assert_empty runner.run_commands
+  end
+
+  def test_build_commands_use_an_invocable_homebrew_executable
+    formula = "block/tap/stoic"
+    runner = HomebrewExecutableProbeRunner.new
+    formula_service = FakeFormulaService.new(
+      order:      [formula],
+      identities: { formula => ["stoic", "0.9.1"] },
+    )
+
+    BottleWorkflow.build_bottles(
+      formulae:        formula,
+      repository:      "block/homebrew-tap",
+      runner:,
+      formula_service:,
+    )
+
+    assert_equal 4, runner.commands.length
+    assert runner.commands.all? { |command| command.first == HOMEBREW_BREW_FILE.to_s }
   end
 
   def test_find_publish_run_ignores_direct_pushes

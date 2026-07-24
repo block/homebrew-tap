@@ -164,6 +164,7 @@ module BottleWorkflow
   def build_bottles(formulae:, repository:, runner:, formula_service:)
     formulae = parse_formulae(required_value(formulae, "--formulae"))
     required_value(repository, "--repository")
+    brew = HOMEBREW_BREW_FILE.to_s
 
     formula_service.order(formulae).each do |formula|
       requirement_messages = formula_service.unsatisfied_requirement_messages(formula)
@@ -174,15 +175,15 @@ module BottleWorkflow
       end
 
       # A target may already be installed as another target's dependency. Rebuild it cleanly.
-      if runner.success?("brew", "list", "--formula", "--versions", formula, quiet: true)
-        runner.run!("brew", "uninstall", "--formula", "--force", formula)
+      if runner.success?(brew, "list", "--formula", "--versions", formula, quiet: true)
+        runner.run!(brew, "uninstall", "--formula", "--force", formula)
       end
-      runner.run!("brew", "install", "--build-bottle", "--no-ask", formula)
-      runner.run!("brew", "test", formula)
+      runner.run!(brew, "install", "--build-bottle", "--no-ask", formula)
+      runner.run!(brew, "test", formula)
 
       name, pkg_version = formula_service.identity(formula)
       root_url = "https://github.com/#{repository}/releases/download/#{name}-#{pkg_version}"
-      runner.run!("brew", "bottle", "--json", "--root-url=#{root_url}", formula)
+      runner.run!(brew, "bottle", "--json", "--root-url=#{root_url}", formula)
     end
   end
 
