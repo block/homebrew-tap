@@ -59,34 +59,11 @@ jobs:
         env:
           REQUESTED_FORMULAE: ${{ inputs.formulae }}
         run: |
-          all_formulae() {
-            for path in Formula/*.rb
-            do
-              formula=${path#Formula/}
-              printf 'block/tap/%s\n' "${formula%.rb}"
-            done |
-              paste -sd, -
-          }
-
-          # Manual runs build the requested subset, or every formula when no input is given.
-          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]
-          then
-            if [[ -n "$REQUESTED_FORMULAE" ]]
-            then
-              formulae="$REQUESTED_FORMULAE"
-            else
-              formulae=$(all_formulae)
-            fi
-          else
-            # Pull requests only rebuild formulae changed by that pull request.
-            formulae=$(
-              git diff --diff-filter=AMR --name-only "origin/$GITHUB_BASE_REF...HEAD" -- 'Formula/*.rb' |
-                sed -E 's#^Formula/(.*)\.rb$#block/tap/\1#' |
-                paste -sd, -
-            )
-          fi
-
-          echo "value=$formulae" >> "$GITHUB_OUTPUT"
+          brew ruby -- scripts/bottle_workflow.rb select-formulae \
+            --event "$GITHUB_EVENT_NAME" \
+            --base-ref "$GITHUB_BASE_REF" \
+            --requested "$REQUESTED_FORMULAE" \
+            --output "$GITHUB_OUTPUT"
 
       - name: Build bottles
         if: steps.formulae.outputs.value != ''
@@ -94,79 +71,9 @@ jobs:
         env:
           FORMULAE: ${{ steps.formulae.outputs.value }}
         run: |
-          IFS=',' read -ra formulae <<< "$FORMULAE"
-          ordered_formulae=$(
-            brew ruby -e '
-              require "tsort"
-
-              graph = ARGV.to_h do |name|
-                formula = Formula[name]
-                [formula.full_name, formula]
-              end
-              graph.extend(TSort)
-              graph.define_singleton_method(:tsort_each_node) do |&block|
-                each_key(&block)
-              end
-              graph.define_singleton_method(:tsort_each_child) do |name, &block|
-                fetch(name).deps.each do |dependency|
-                  dependency_name = dependency.to_formula.full_name
-                  block.call(dependency_name) if key?(dependency_name)
-                end
-              end
-
-              puts graph.tsort.join(",")
-            ' "${formulae[@]}"
-          )
-          IFS=',' read -ra formulae <<< "$ordered_formulae"
-
-          for formula in "${formulae[@]}"
-          do
-            set +e
-            requirement_messages=$(
-              brew ruby -e '
-                require "formula_installer"
-                formula = Formula[ARGV.fetch(0)]
-                installer = FormulaInstaller.new(formula, build_bottle: true)
-                unsatisfied, = installer.expand_requirements
-                exit 0 if unsatisfied.empty?
-
-                warn unsatisfied.values.flatten.map(&:message)
-                exit 2
-              ' "$formula" 2>&1
-            )
-            requirement_status=$?
-            set -e
-
-            # Exit 2 means this formula does not support the runner; other failures are errors.
-            if [[ "$requirement_status" -eq 2 ]]
-            then
-              echo "Skipping $formula on this runner:"
-              echo "$requirement_messages"
-              continue
-            elif [[ "$requirement_status" -ne 0 ]]
-            then
-              echo "$requirement_messages"
-              exit "$requirement_status"
-            fi
-
-            # A target may already be installed as another target's dependency. Rebuild it cleanly.
-            if brew list --formula --versions "$formula" >/dev/null
-            then
-              brew uninstall --formula --force "$formula"
-            fi
-            brew install --build-bottle --no-ask "$formula"
-
-            brew test "$formula"
-
-            read -r name pkg_version < <(
-              brew ruby -e '
-                formula = Formula[ARGV.fetch(0)]
-                puts "#{formula.name} #{formula.pkg_version}"
-              ' "$formula"
-            )
-            root_url="https://github.com/$GITHUB_REPOSITORY/releases/download/$name-$pkg_version"
-            brew bottle --json --root-url="$root_url" "$formula"
-          done
+          brew ruby -- scripts/bottle_workflow.rb build-bottles \
+            --formulae "$FORMULAE" \
+            --repository "$GITHUB_REPOSITORY"
 
       - name: Upload bottles as artifact
         if: always()

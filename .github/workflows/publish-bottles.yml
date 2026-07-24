@@ -17,71 +17,22 @@ jobs:
       contents: write
       pull-requests: read
     steps:
-      - name: Find bottles for the merged pull request
-        id: bottles
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          pull_request=$(
-            gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" \
-              --jq 'map(select(.merged_at != null)) | first // empty'
-          )
-
-          # Ignore direct maintenance pushes that are not the result of merging a pull request.
-          if [[ -z "$pull_request" ]]
-          then
-            echo "No merged pull request is associated with $GITHUB_SHA."
-            exit 0
-          fi
-
-          number=$(jq -r '.number' <<< "$pull_request")
-          head_sha=$(jq -r '.head.sha' <<< "$pull_request")
-          bottle_change_count=$(
-            gh api "repos/$GITHUB_REPOSITORY/pulls/$number/files?per_page=100" \
-              --jq '[.[] | select(
-                .status != "removed" and
-                (.filename | (startswith("Formula/") and endswith(".rb")))
-              )] | length'
-          )
-
-          # Only pull requests with formula changes have bottle artifacts to publish.
-          if [[ "$bottle_change_count" -eq 0 ]]
-          then
-            echo "Pull request #$number did not produce bottles."
-            exit 0
-          fi
-
-          run_id=$(
-            gh api "repos/$GITHUB_REPOSITORY/actions/workflows/build-bottles.yml/runs?head_sha=$head_sha&event=pull_request&status=success&per_page=1" \
-              --jq '.workflow_runs[0].id // empty'
-          )
-
-          # Publish only artifacts built successfully from the exact reviewed PR head.
-          if [[ -z "$run_id" ]]
-          then
-            echo "::error::No successful bottle build found for pull request #$number at $head_sha."
-            exit 1
-          fi
-
-          artifact_count=$(
-            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/artifacts?per_page=100" \
-              --jq '[.artifacts[] | select(.expired == false and (.name | startswith("bottles_")))] | length'
-          )
-
-          # A successful run without retained bottle artifacts cannot be published safely.
-          if [[ "$artifact_count" -eq 0 ]]
-          then
-            echo "::error::Bottle build $run_id has no bottle artifacts."
-            exit 1
-          fi
-
-          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
-
       - name: Set up Homebrew
-        if: steps.bottles.outputs.run_id != ''
+        id: set-up-homebrew
         uses: Homebrew/actions/setup-homebrew@18fcb8e3e06b4247c676c506750dc95ea7226479 # 2026.07.13.1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Find bottles for the merged pull request
+        id: bottles
+        working-directory: ${{ steps.set-up-homebrew.outputs.repository-path }}
+        env:
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          brew ruby -- scripts/bottle_workflow.rb find-publish-run \
+            --repository "$GITHUB_REPOSITORY" \
+            --sha "$GITHUB_SHA" \
+            --output "$GITHUB_OUTPUT"
 
       - name: Set up git
         if: steps.bottles.outputs.run_id != ''

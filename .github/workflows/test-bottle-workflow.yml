@@ -1,0 +1,46 @@
+name: Test bottle workflow
+
+on:
+  pull_request:
+    paths:
+      - "scripts/bottle_workflow.rb"
+      - "scripts/test_bottle_workflow.rb"
+      - ".github/workflows/build-bottles.yml"
+      - ".github/workflows/publish-bottles.yml"
+      - ".github/workflows/test-bottle-workflow.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "scripts/bottle_workflow.rb"
+      - "scripts/test_bottle_workflow.rb"
+      - ".github/workflows/build-bottles.yml"
+      - ".github/workflows/publish-bottles.yml"
+      - ".github/workflows/test-bottle-workflow.yml"
+  workflow_dispatch:
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Set up Homebrew
+        id: set-up-homebrew
+        uses: Homebrew/actions/setup-homebrew@18fcb8e3e06b4247c676c506750dc95ea7226479 # 2026.07.13.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache Homebrew Bundler RubyGems
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.set-up-homebrew.outputs.gems-path }}
+          key: bottle-workflow-rubygems-${{ steps.set-up-homebrew.outputs.gems-hash }}
+          restore-keys: bottle-workflow-rubygems-
+
+      - name: Install test dependencies
+        run: brew install-bundler-gems --add-groups=formula_test
+
+      - name: Run bottle workflow regression tests
+        working-directory: ${{ steps.set-up-homebrew.outputs.repository-path }}
+        run: brew ruby scripts/test_bottle_workflow.rb
