@@ -1,5 +1,5 @@
 # Release metadata is managed by .github/workflows/bump-formula.yaml.
-# Avoid manual edits to `url`, `sha256`, and `version`; the bump workflow rewrites them.
+# Avoid manual edits to `url` and `sha256`; the bump workflow rewrites them.
 # Run: gh workflow run bump-formula.yaml -f repo=block/anchorsmd -f formula=anchors -f tag= -f artifact_url=<artifact_url> [-f sha256=]
 
 class Anchors < Formula
@@ -8,7 +8,6 @@ class Anchors < Formula
   url "https://github.com/block/anchorsmd/releases/download/0.2.0/anchors-release.tar.gz"
   sha256 "89f85b2079bc4458f4e097ccef9b69aa56d1879176d292ccfd2ecdf330e9d465"
   license "Apache-2.0"
-  version "0.2.0"
 
   def install
     libexec.install "anchors"

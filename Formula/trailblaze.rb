@@ -1,5 +1,5 @@
 # Release metadata is managed by .github/workflows/bump-formula.yaml.
-# Avoid manual edits to `url`, `sha256`, and `version`; the bump workflow rewrites them.
+# Avoid manual edits to `url` and `sha256`; the bump workflow rewrites them.
 # Run: gh workflow run bump-formula.yaml -f repo=block/trailblaze -f formula=trailblaze -f tag=<tag>
 
 class Trailblaze < Formula
@@ -8,7 +8,6 @@ class Trailblaze < Formula
   url "https://github.com/block/trailblaze/releases/download/v2026.07.21/trailblaze.jar"
   sha256 "95d9454f981b166ecbe292f903f5453d52d1808448d10d7f625a7547dcbc3cc7"
   license "Apache-2.0"
-  version "2026.07.21"
 
   depends_on "openjdk@21"
   # bun is the JS/TS runtime Trailblaze uses to type-check and analyze TypeScript scripted

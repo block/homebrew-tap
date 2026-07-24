@@ -1,5 +1,5 @@
 # Release metadata is managed by .github/workflows/bump-formula.yaml.
-# Avoid manual edits to `url`, `sha256`, and `version`; the bump workflow rewrites them.
+# Avoid manual edits to `url` and `sha256`; the bump workflow rewrites them.
 # Run: gh workflow run bump-formula.yaml -f repo=block/sessh -f formula=sessh -f tag=<tag> -f artifact_url=<artifact_url> [-f sha256=<sha256>]
 
 class Sessh < Formula
@@ -8,7 +8,6 @@ class Sessh < Formula
   url "https://github.com/block/sessh/releases/download/v0.6.0/sessh-0.6.0.tar.gz"
   sha256 "023faab46bae8aca5900d8688d86076d45a5ed87cc9b0d1581213433ac1b3af4"
   license "Apache-2.0"
-  version "0.6.0"
 
   def install
     bin.install "bin/sessh", "bin/sesshmux"
