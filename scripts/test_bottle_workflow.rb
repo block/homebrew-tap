@@ -272,7 +272,11 @@ class BottleWorkflowTest < Minitest::Test
     assert_equal 456, result
     assert_equal "run_id=456\n", @output.read
     assert_equal ["test-token"] * 4, runner.captured_tokens
-    assert_equal previous_token, ENV.fetch("GH_TOKEN", nil)
+    if previous_token
+      assert_equal previous_token, ENV.fetch("GH_TOKEN", nil)
+    else
+      assert_nil ENV.fetch("GH_TOKEN", nil)
+    end
   end
 
   def test_find_publish_run_fails_without_a_successful_exact_head_build
