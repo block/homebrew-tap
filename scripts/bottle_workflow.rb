@@ -10,6 +10,8 @@ require "English"
 
 # Implements the build and publication decisions shared by the bottle workflows.
 module BottleWorkflow
+  PULL_REQUEST_FILES_PER_PAGE = 100
+
   class Error < StandardError; end
 
   # Runs external commands while preserving their output in GitHub Actions logs.
@@ -201,7 +203,13 @@ module BottleWorkflow
 
     number = pull_request.fetch("number")
     head_sha = pull_request.fetch("head").fetch("sha")
-    files = github.get("repos/#{repository}/pulls/#{number}/files?per_page=100")
+    files = github.get(
+      "repos/#{repository}/pulls/#{number}/files?per_page=#{PULL_REQUEST_FILES_PER_PAGE}",
+    )
+    if files.length >= PULL_REQUEST_FILES_PER_PAGE
+      raise Error, "Pull request ##{number} has at least #{PULL_REQUEST_FILES_PER_PAGE} changed files; " \
+                   "its formula changes cannot be determined safely."
+    end
     formula_changed = files.any? do |file|
       filename = file.fetch("filename")
       file.fetch("status") != "removed" && filename.start_with?("Formula/") && filename.end_with?(".rb")

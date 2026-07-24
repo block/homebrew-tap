@@ -251,6 +251,26 @@ class BottleWorkflowTest < Minitest::Test
     assert_empty @output.read
   end
 
+  def test_find_publish_run_fails_when_changed_files_may_be_truncated
+    files = Array.new(100) do |index|
+      { "status" => "modified", "filename" => "docs/file-#{index}.md" }
+    end
+    runner = FakeRunner.new(
+      captures: {
+        pulls_command => JSON.generate([merged_pull_request]),
+        files_command => JSON.generate(files),
+      },
+    )
+
+    error = assert_raises(BottleWorkflow::Error) do
+      BottleWorkflow.find_publish_run(**publish_options, runner:)
+    end
+
+    assert_equal "Pull request #131 has at least 100 changed files; its formula changes cannot be determined safely.",
+                 error.message
+    assert_empty @output.read
+  end
+
   def test_find_publish_run_uses_exact_reviewed_head_with_bottle_artifacts
     previous_token = ENV.fetch("GH_TOKEN", nil)
     runner = FakeRunner.new(
