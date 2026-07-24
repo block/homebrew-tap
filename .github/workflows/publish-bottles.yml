@@ -39,12 +39,12 @@ jobs:
           bottle_change_count=$(
             gh api "repos/$GITHUB_REPOSITORY/pulls/$number/files?per_page=100" \
               --jq '[.[] | select(
-                (.status != "removed" and (.filename | (startswith("Formula/") and endswith(".rb")))) or
-                (.status == "added" and .filename == ".github/workflows/build-bottles.yml")
+                .status != "removed" and
+                (.filename | (startswith("Formula/") and endswith(".rb")))
               )] | length'
           )
 
-          # Formula changes and the introductory workflow PR have bottle artifacts to publish.
+          # Only pull requests with formula changes have bottle artifacts to publish.
           if [[ "$bottle_change_count" -eq 0 ]]
           then
             echo "Pull request #$number did not produce bottles."

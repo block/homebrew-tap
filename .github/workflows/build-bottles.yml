@@ -77,12 +77,8 @@ jobs:
             else
               formulae=$(all_formulae)
             fi
-          # The introductory PR has no workflow on its base branch, so bootstrap every formula.
-          elif ! git cat-file -e "origin/$GITHUB_BASE_REF:.github/workflows/build-bottles.yml" 2>/dev/null
-          then
-            formulae=$(all_formulae)
-          # After bootstrapping, normal PRs only rebuild formulae changed by that PR.
           else
+            # Pull requests only rebuild formulae changed by that pull request.
             formulae=$(
               git diff --diff-filter=AMR --name-only "origin/$GITHUB_BASE_REF...HEAD" -- 'Formula/*.rb' |
                 sed -E 's#^Formula/(.*)\.rb$#block/tap/\1#' |
