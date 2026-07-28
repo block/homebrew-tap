@@ -1,5 +1,5 @@
-# Release metadata is managed by .github/workflows/bump-formula.yaml.
-# Avoid manual edits to `url` and `sha256`; the bump workflow rewrites them.
+# Release metadata and bottle blocks are managed by GitHub Actions.
+# Avoid manual edits to `url`, `sha256`, or a generated `bottle` block; the bump and bottle workflows rewrite them.
 # Run: gh workflow run bump-formula.yaml -f repo=block/sessh -f formula=sessh -f tag=<tag> -f artifact_url=<artifact_url> [-f sha256=<sha256>]
 
 class Sessh < Formula
