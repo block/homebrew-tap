@@ -1,0 +1,64 @@
+name: Publish bottles
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: publish-bottles
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+      pull-requests: read
+    steps:
+      - name: Set up Homebrew
+        id: set-up-homebrew
+        uses: Homebrew/actions/setup-homebrew@18fcb8e3e06b4247c676c506750dc95ea7226479 # 2026.07.13.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Find bottles for the merged pull request
+        id: bottles
+        working-directory: ${{ steps.set-up-homebrew.outputs.repository-path }}
+        env:
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          brew ruby -- scripts/bottle_workflow.rb find-publish-run \
+            --repository "$GITHUB_REPOSITORY" \
+            --sha "$GITHUB_SHA" \
+            --output "$GITHUB_OUTPUT"
+
+      - name: Set up git
+        if: steps.bottles.outputs.run_id != ''
+        uses: Homebrew/actions/git-user-config@18fcb8e3e06b4247c676c506750dc95ea7226479 # 2026.07.13.1
+
+      - name: Download bottles
+        if: steps.bottles.outputs.run_id != ''
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: bottles_*
+          path: bottles
+          merge-multiple: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.bottles.outputs.run_id }}
+
+      - name: Upload bottles to GitHub Releases
+        if: steps.bottles.outputs.run_id != ''
+        env:
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: brew pr-upload --debug
+        working-directory: bottles
+
+      - name: Push bottle blocks
+        if: steps.bottles.outputs.run_id != ''
+        uses: Homebrew/actions/git-try-push@18fcb8e3e06b4247c676c506750dc95ea7226479 # 2026.07.13.1
+        with:
+          branch: main
+          token: ${{ secrets.GITHUB_TOKEN }}
