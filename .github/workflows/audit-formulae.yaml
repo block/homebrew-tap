@@ -1,0 +1,43 @@
+name: Audit Formulae
+
+on:
+  pull_request:
+    paths:
+      - "Formula/**"
+      - ".github/workflows/audit-formulae.yaml"
+      - "scripts/check-formula-versions.rb"
+  push:
+    branches:
+      - main
+    paths:
+      - "Formula/**"
+      - ".github/workflows/audit-formulae.yaml"
+      - "scripts/check-formula-versions.rb"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Set up Homebrew
+        id: set-up-homebrew
+        uses: Homebrew/actions/setup-homebrew@18fcb8e3e06b4247c676c506750dc95ea7226479 # 2026.07.13.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Audit all formulae
+        working-directory: ${{ steps.set-up-homebrew.outputs.repository-path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t formulae < <(brew tap-info --json block/tap | jq -r '.[0].formula_names[]')
+          if (( ${#formulae[@]} == 0 )); then
+            echo "No formulae found in block/tap." >&2
+            exit 1
+          fi
+          brew ruby -- scripts/check-formula-versions.rb "${formulae[@]}"
+          brew audit --skip-style --formula "${formulae[@]}"

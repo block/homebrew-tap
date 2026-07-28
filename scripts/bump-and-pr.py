@@ -70,11 +70,12 @@ def bump_formula_file(
     contents = formula_file.read_text()
     old_tag = extract_release_tag_from_url(extract_field(contents, "url", formula_file))
     artifacts: list[tuple[str, str]] = []
+    if extract_all_fields(contents, "version"):
+        contents = update_fields(contents, {"version": new_version}, formula_file)
 
     if is_multi_arch_formula(contents):
         old_urls = extract_all_fields(contents, "url")
         source_tag = extract_release_tag_from_url(old_urls[0])
-        contents = update_fields(contents, {"version": new_version}, formula_file)
         for i, old_url in enumerate(old_urls):
             new_url = old_url.replace(source_tag, new_tag)
             validate_artifact_url(new_url)
@@ -92,7 +93,6 @@ def bump_formula_file(
             {
                 "url": artifact_url,
                 "sha256": sha256,
-                "version": new_version,
             },
             formula_file,
         )
