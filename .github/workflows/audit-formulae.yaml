@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "Formula/**"
+      - "scripts/pin-homebrew.sh"
       - ".github/workflows/audit-formulae.yaml"
       - "scripts/check-formula-versions.rb"
   push:
@@ -11,6 +12,7 @@ on:
       - main
     paths:
       - "Formula/**"
+      - "scripts/pin-homebrew.sh"
       - ".github/workflows/audit-formulae.yaml"
       - "scripts/check-formula-versions.rb"
   workflow_dispatch:
@@ -28,6 +30,11 @@ jobs:
         uses: Homebrew/actions/setup-homebrew@18fcb8e3e06b4247c676c506750dc95ea7226479 # 2026.07.13.1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pin Homebrew
+        id: pin-homebrew
+        working-directory: ${{ steps.set-up-homebrew.outputs.repository-path }}
+        run: bash scripts/pin-homebrew.sh
 
       - name: Audit all formulae
         working-directory: ${{ steps.set-up-homebrew.outputs.repository-path }}

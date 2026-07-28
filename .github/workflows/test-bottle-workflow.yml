@@ -3,6 +3,7 @@ name: Test bottle workflow
 on:
   pull_request:
     paths:
+      - "scripts/pin-homebrew.sh"
       - "scripts/bottle_workflow.rb"
       - "scripts/test_bottle_workflow.rb"
       - ".github/workflows/build-bottles.yml"
@@ -12,6 +13,7 @@ on:
     branches:
       - main
     paths:
+      - "scripts/pin-homebrew.sh"
       - "scripts/bottle_workflow.rb"
       - "scripts/test_bottle_workflow.rb"
       - ".github/workflows/build-bottles.yml"
@@ -31,11 +33,16 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Pin Homebrew
+        id: pin-homebrew
+        working-directory: ${{ steps.set-up-homebrew.outputs.repository-path }}
+        run: bash scripts/pin-homebrew.sh
+
       - name: Cache Homebrew Bundler RubyGems
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ steps.set-up-homebrew.outputs.gems-path }}
-          key: bottle-workflow-rubygems-${{ steps.set-up-homebrew.outputs.gems-hash }}
+          key: bottle-workflow-rubygems-${{ steps.pin-homebrew.outputs.gems-hash }}
           restore-keys: bottle-workflow-rubygems-
 
       - name: Install test dependencies

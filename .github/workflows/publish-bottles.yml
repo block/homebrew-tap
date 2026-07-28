@@ -23,6 +23,11 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Pin Homebrew
+        id: pin-homebrew
+        working-directory: ${{ steps.set-up-homebrew.outputs.repository-path }}
+        run: bash scripts/pin-homebrew.sh
+
       - name: Find bottles for the merged pull request
         id: bottles
         working-directory: ${{ steps.set-up-homebrew.outputs.repository-path }}
