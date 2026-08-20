@@ -5,8 +5,8 @@
 class Ghost < Formula
   desc "Product-surface composition fingerprints, checks, review, and comparison"
   homepage "https://github.com/block/ghost"
-  url "https://github.com/block/ghost/releases/download/design-intelligence-ghost@0.29.0/design-intelligence-ghost-0.29.0.tgz"
-  sha256 "bd836d61efbc959a591adc90bdffe87fe6f1861f92df124052d7f4043b1ebce4"
+  url "https://github.com/block/ghost/releases/download/design-intelligence-ghost@0.31.0/design-intelligence-ghost-0.31.0.tgz"
+  sha256 "25406724bc95cc0b15d101e0a297e6c2f8dabfb7f55e60449d4fcce51aa75d94"
   license "Apache-2.0"
 
   depends_on "node"
