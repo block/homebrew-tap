@@ -5,10 +5,10 @@
 class Spirit < Formula
   desc "Online schema change and data operations for MySQL 8.0+"
   homepage "https://github.com/block/spirit"
-  url "https://github.com/block/spirit/releases/download/v0.12.0/spirit_0.12.0_darwin_arm64.tar.gz"
-  sha256 "99c1d1b2c9e6332473dbf8325cca1ed622708f5826f457ac9c0f225806100fce"
+  url "https://github.com/block/spirit/releases/download/v0.17.0/spirit_0.17.0_darwin_arm64.tar.gz"
+  sha256 "0673c8ece5b9f17cb1cfb1a77a0b3e8584db48a5f8f7b3db9dced8f2e4154104"
   license "Apache-2.0"
-  version "0.12.0"
+  version "0.17.0"
 
   depends_on arch: :arm64
   depends_on :macos
