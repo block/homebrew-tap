@@ -5,8 +5,8 @@
 class Qrgo < Formula
   desc "A CLI utility for screen-capturing a QR code and launching it in an Android emulator or iOS simulator."
   homepage "https://github.com/block/qrgo"
-  url "https://github.com/block/qrgo/releases/download/1.4.1/qrgo-release.tar.gz"
-  sha256 "2ed326019def1ac89c91ff23ea5b559248c2642004c13fc1894b9f48b7738b61"
+  url "https://github.com/block/qrgo/releases/download/1.4.2/qrgo-release.tar.gz"
+  sha256 "e7dcdd70eeb2dfc1c0fbbd71bce5f94efd17b5466620784d02796575ab5fbc9f"
   license "Apache-2.0"
 
   depends_on arch: :arm64
