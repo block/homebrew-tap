@@ -2,8 +2,6 @@ class Lhm < Formula
   desc "Merges global and repo lefthook configs"
   homepage "https://github.com/block/lhm"
   license "Apache-2.0"
-  version "0.14.0"
-
   on_macos do
     if Hardware::CPU.arm?
       url "https://github.com/block/lhm/releases/download/v0.14.0/lhm-aarch64-apple-darwin.bz2"

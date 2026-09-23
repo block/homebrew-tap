@@ -2,10 +2,6 @@ name: Audit Formulae
 
 on:
   pull_request:
-    paths:
-      - "Formula/**"
-      - ".github/workflows/audit-formulae.yaml"
-      - "scripts/check-formula-versions.rb"
   push:
     branches:
       - main
