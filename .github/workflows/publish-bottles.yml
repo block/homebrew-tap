@@ -66,4 +66,3 @@ jobs:
         uses: Homebrew/actions/git-try-push@18fcb8e3e06b4247c676c506750dc95ea7226479 # 2026.07.13.1
         with:
           branch: main
-          token: ${{ secrets.GITHUB_TOKEN }}
