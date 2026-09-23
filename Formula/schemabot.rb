@@ -5,7 +5,6 @@ class Schemabot < Formula
   desc "Safe schema changes at the speed of agents"
   homepage "https://github.com/block/schemabot"
   license "Apache-2.0"
-  version "0.1.70"
 
   on_macos do
     depends_on arch: :arm64
