@@ -11,6 +11,8 @@ require "English"
 # Implements the build and publication decisions shared by the bottle workflows.
 module BottleWorkflow
   PULL_REQUEST_FILES_PER_PAGE = 100
+  PUBLISH_RUN_POLL_ATTEMPTS = 40
+  PUBLISH_RUN_POLL_INTERVAL_SECONDS = 30
 
   class Error < StandardError; end
 
@@ -84,11 +86,6 @@ module BottleWorkflow
       unsatisfied, = installer.expand_requirements
       unsatisfied.values.flatten.map(&:message)
     end
-
-    def identity(name)
-      formula = Formula[name]
-      [formula.name, formula.pkg_version.to_s]
-    end
   end
 
   # Retrieves structured data through the authenticated GitHub CLI.
@@ -134,6 +131,13 @@ module BottleWorkflow
   def write_output(output_path, name, value)
     required_value(output_path, "--output")
     File.open(output_path, "a") { |output| output.puts "#{name}=#{value}" }
+  end
+
+  def github_packages_root_url(repository)
+    owner, repo = required_value(repository, "--repository").split("/", 2)
+    raise Error, "Repository must use the owner/name format: #{repository}" if owner.blank? || repo.blank?
+
+    "https://ghcr.io/v2/#{owner.downcase}/#{repo.delete_prefix("homebrew-")}"
   end
 
   def select_formulae(event_name:, requested_formulae:, base_ref:, output_path:, runner:, root: Pathname.pwd)
@@ -183,13 +187,40 @@ module BottleWorkflow
       runner.run!(brew, "install", "--build-bottle", "--no-ask", formula)
       runner.run!(brew, "test", formula)
 
-      name, pkg_version = formula_service.identity(formula)
-      root_url = "https://github.com/#{repository}/releases/download/#{name}-#{pkg_version}"
+      root_url = github_packages_root_url(repository)
       runner.run!(brew, "bottle", "--json", "--root-url=#{root_url}", formula)
     end
   end
 
-  def find_publish_run(repository:, sha:, output_path:, token:, runner:, github: GitHubClient.new(runner, token))
+  def wait_for_successful_bottle_run(repository:, number:, head_sha:, github:, sleeper:)
+    endpoint = "repos/#{repository}/actions/workflows/build-bottles.yml/runs" \
+               "?head_sha=#{head_sha}&event=pull_request&per_page=1"
+
+    PUBLISH_RUN_POLL_ATTEMPTS.times do |attempt|
+      run = github.get(endpoint).fetch("workflow_runs").first
+      if run
+        status = run.fetch("status")
+        conclusion = run["conclusion"]
+        return run.fetch("id") if status == "completed" && conclusion == "success"
+
+        if status == "completed"
+          raise Error, "Bottle build #{run.fetch("id")} for pull request ##{number} at #{head_sha} " \
+                       "completed with #{conclusion || "an unknown conclusion"}."
+        end
+      end
+
+      break if attempt == PUBLISH_RUN_POLL_ATTEMPTS - 1
+
+      # A push workflow starts immediately after merge and can race the pull-request bottle jobs.
+      puts "Waiting for the bottle build for pull request ##{number} at #{head_sha}..."
+      sleeper.call(PUBLISH_RUN_POLL_INTERVAL_SECONDS)
+    end
+
+    raise Error, "Timed out waiting for the bottle build for pull request ##{number} at #{head_sha}."
+  end
+
+  def find_publish_run(repository:, sha:, output_path:, token:, runner:, github: GitHubClient.new(runner, token),
+                       sleeper: ->(seconds) { sleep(seconds) })
     required_value(repository, "--repository")
     required_value(sha, "--sha")
     required_value(token, "HOMEBREW_GITHUB_API_TOKEN")
@@ -219,12 +250,13 @@ module BottleWorkflow
       return
     end
 
-    runs = github.get(
-      "repos/#{repository}/actions/workflows/build-bottles.yml/runs" \
-      "?head_sha=#{head_sha}&event=pull_request&status=success&per_page=1",
+    run_id = wait_for_successful_bottle_run(
+      repository:,
+      number:,
+      head_sha:,
+      github:,
+      sleeper:,
     )
-    run_id = runs.fetch("workflow_runs").first&.fetch("id")
-    raise Error, "No successful bottle build found for pull request ##{number} at #{head_sha}." unless run_id
 
     artifact_response = github.get("repos/#{repository}/actions/runs/#{run_id}/artifacts?per_page=100")
     artifact_found = artifact_response.fetch("artifacts").any? do |artifact|

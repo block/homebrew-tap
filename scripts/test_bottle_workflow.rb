@@ -26,7 +26,8 @@ class FakeRunner
   def capture!(*command)
     @capture_commands << command
     @captured_tokens << ENV.fetch("GH_TOKEN", nil)
-    @captures.fetch(command) { raise "Unexpected captured command: #{command.inspect}" }
+    response = @captures.fetch(command) { raise "Unexpected captured command: #{command.inspect}" }
+    response.respond_to?(:call) ? response.call : response
   end
 
   def run!(*command)
@@ -41,10 +42,9 @@ end
 
 # Supplies deterministic formula metadata to the build orchestration tests.
 class FakeFormulaService
-  def initialize(order:, requirements: {}, identities: {})
+  def initialize(order:, requirements: {})
     @order = order
     @requirements = requirements
-    @identities = identities
   end
 
   def order(_names)
@@ -55,9 +55,6 @@ class FakeFormulaService
     @requirements.fetch(name, [])
   end
 
-  def identity(name)
-    @identities.fetch(name)
-  end
 end
 
 # Verifies build command executables without installing, testing, or bottling a formula.
@@ -151,13 +148,7 @@ class BottleWorkflowTest < Minitest::Test
     radiography = "block/tap/radiography"
     brew = HOMEBREW_BREW_FILE.to_s
     runner = FakeRunner.new(successes: { [brew, "list", "--formula", "--versions", radiography] => true })
-    formula_service = FakeFormulaService.new(
-      order:      [stoic, radiography],
-      identities: {
-        stoic       => ["stoic", "0.9.1"],
-        radiography => ["radiography", "2.9"],
-      },
-    )
+    formula_service = FakeFormulaService.new(order: [stoic, radiography])
     BottleWorkflow.build_bottles(
       formulae:        "#{radiography},#{stoic}",
       repository:      "block/homebrew-tap",
@@ -170,14 +161,14 @@ class BottleWorkflowTest < Minitest::Test
       [brew, "test", stoic],
       [
         brew, "bottle", "--json",
-        "--root-url=https://github.com/block/homebrew-tap/releases/download/stoic-0.9.1", stoic
+        "--root-url=https://ghcr.io/v2/block/tap", stoic
       ],
       [brew, "uninstall", "--formula", "--force", radiography],
       [brew, "install", "--build-bottle", "--no-ask", radiography],
       [brew, "test", radiography],
       [
         brew, "bottle", "--json",
-        "--root-url=https://github.com/block/homebrew-tap/releases/download/radiography-2.9", radiography
+        "--root-url=https://ghcr.io/v2/block/tap", radiography
       ],
     ], runner.run_commands
     assert_equal [
@@ -209,10 +200,7 @@ class BottleWorkflowTest < Minitest::Test
   def test_build_commands_use_an_invocable_homebrew_executable
     formula = "block/tap/stoic"
     runner = HomebrewExecutableProbeRunner.new
-    formula_service = FakeFormulaService.new(
-      order:      [formula],
-      identities: { formula => ["stoic", "0.9.1"] },
-    )
+    formula_service = FakeFormulaService.new(order: [formula])
 
     BottleWorkflow.build_bottles(
       formulae:        formula,
@@ -277,7 +265,9 @@ class BottleWorkflowTest < Minitest::Test
       captures: {
         pulls_command          => JSON.generate([merged_pull_request]),
         files_command          => JSON.generate([{ "status" => "modified", "filename" => "Formula/stoic.rb" }]),
-        runs_command           => JSON.generate({ "workflow_runs" => [{ "id" => 456 }] }),
+        runs_command           => JSON.generate({
+          "workflow_runs" => [{ "id" => 456, "status" => "completed", "conclusion" => "success" }],
+        }),
         artifacts_command(456) => JSON.generate({
           "artifacts" => [
             { "name" => "unrelated", "expired" => false },
@@ -299,20 +289,48 @@ class BottleWorkflowTest < Minitest::Test
     end
   end
 
-  def test_find_publish_run_fails_without_a_successful_exact_head_build
+  def test_find_publish_run_waits_for_the_exact_head_build
+    responses = [
+      JSON.generate({ "workflow_runs" => [{ "id" => 456, "status" => "in_progress", "conclusion" => nil }] }),
+      JSON.generate({
+        "workflow_runs" => [{ "id" => 456, "status" => "completed", "conclusion" => "success" }],
+      }),
+    ]
+    sleeps = []
+    runner = FakeRunner.new(
+      captures: {
+        pulls_command          => JSON.generate([merged_pull_request]),
+        files_command          => JSON.generate([{ "status" => "modified", "filename" => "Formula/stoic.rb" }]),
+        runs_command           => -> { responses.shift },
+        artifacts_command(456) => JSON.generate({
+          "artifacts" => [{ "name" => "bottles_ubuntu-latest", "expired" => false }],
+        }),
+      },
+    )
+
+    result = BottleWorkflow.find_publish_run(**publish_options, runner:, sleeper: ->(seconds) { sleeps << seconds })
+
+    assert_equal 456, result
+    assert_equal [BottleWorkflow::PUBLISH_RUN_POLL_INTERVAL_SECONDS], sleeps
+    assert_equal 2, runner.capture_commands.count(runs_command)
+  end
+
+  def test_find_publish_run_reports_a_failed_exact_head_build
     runner = FakeRunner.new(
       captures: {
         pulls_command => JSON.generate([merged_pull_request]),
         files_command => JSON.generate([{ "status" => "modified", "filename" => "Formula/stoic.rb" }]),
-        runs_command  => JSON.generate({ "workflow_runs" => [] }),
+        runs_command  => JSON.generate({
+          "workflow_runs" => [{ "id" => 456, "status" => "completed", "conclusion" => "failure" }],
+        }),
       },
     )
 
     error = assert_raises(BottleWorkflow::Error) do
-      BottleWorkflow.find_publish_run(**publish_options, runner:)
+      BottleWorkflow.find_publish_run(**publish_options, runner:, sleeper: ->(_) { flunk "unexpected sleep" })
     end
 
-    assert_includes error.message, "No successful bottle build found for pull request #131 at reviewed-sha"
+    assert_equal "Bottle build 456 for pull request #131 at reviewed-sha completed with failure.", error.message
   end
 
   def test_find_publish_run_fails_without_retained_bottle_artifacts
@@ -320,7 +338,9 @@ class BottleWorkflowTest < Minitest::Test
       captures: {
         pulls_command          => JSON.generate([merged_pull_request]),
         files_command          => JSON.generate([{ "status" => "modified", "filename" => "Formula/stoic.rb" }]),
-        runs_command           => JSON.generate({ "workflow_runs" => [{ "id" => 456 }] }),
+        runs_command           => JSON.generate({
+          "workflow_runs" => [{ "id" => 456, "status" => "completed", "conclusion" => "success" }],
+        }),
         artifacts_command(456) => JSON.generate({
           "artifacts" => [{ "name" => "bottles_ubuntu-latest", "expired" => true }],
         }),
@@ -378,7 +398,7 @@ class BottleWorkflowTest < Minitest::Test
     [
       "gh", "api",
       "repos/block/homebrew-tap/actions/workflows/build-bottles.yml/runs" \
-      "?head_sha=reviewed-sha&event=pull_request&status=success&per_page=1"
+      "?head_sha=reviewed-sha&event=pull_request&per_page=1"
     ]
   end
 
@@ -398,10 +418,6 @@ class HomebrewFormulaServiceTest < Minitest::Test
       "block/tap/stoic",
       "block/tap/radiography",
     ], @service.order(["block/tap/radiography", "block/tap/stoic"])
-  end
-
-  def test_returns_formula_identity
-    assert_equal ["stoic", "0.9.1"], @service.identity("block/tap/stoic")
   end
 
   def test_reports_platform_requirements

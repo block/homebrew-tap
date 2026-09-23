@@ -2,8 +2,6 @@ class Aittributor < Formula
   desc "Git hook that adds AI agent attribution to commits"
   homepage "https://github.com/block/aittributor"
   license "Apache-2.0"
-  version "0.8.0"
-
   on_macos do
     if Hardware::CPU.arm?
       url "https://github.com/block/aittributor/releases/download/v0.8.0/aittributor-aarch64-apple-darwin.bz2"

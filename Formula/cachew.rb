@@ -2,8 +2,6 @@ class Cachew < Formula
   desc "Tiered, protocol-aware, caching HTTP proxy for software engineering infrastructure"
   homepage "https://github.com/block/cachew"
   license "Apache-2.0"
-  version "0.5.1"
-
   on_macos do
     if Hardware::CPU.arm?
       url "https://github.com/block/cachew/releases/download/v0.5.1/cachew-darwin-arm64.tar.gz"
