@@ -5,6 +5,7 @@ class Schemabot < Formula
   desc "Safe schema changes at the speed of agents"
   homepage "https://github.com/block/schemabot"
   license "Apache-2.0"
+  version "0.1.70"
 
   on_macos do
     depends_on arch: :arm64
@@ -27,7 +28,8 @@ class Schemabot < Formula
   end
 
   test do
-    assert_match "schemabot", shell_output("#{bin}/schemabot --help")
+    assert_match version.to_s, shell_output("#{bin}/schemabot --version")
+    assert_match "Usage:", shell_output("#{bin}/schemabot --help")
     assert_match "init", shell_output("#{bin}/schemabot init --help")
   end
 end
