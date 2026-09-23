@@ -376,9 +376,11 @@ class BumpFormulaAndPrScriptTests(unittest.TestCase):
         self.assertNotIn('version "', formula_contents)
 
     def test_goreleaser_filenames_track_release_versions(self) -> None:
-        formula = REPO_ROOT / "Formula" / "schemabot.rb"
         target = self._sandbox / "Formula" / "schemabot.rb"
-        target.write_text(formula.read_text())
+        target.write_text('class Schemabot < Formula\n  version "0.1.67"\n' + "\n".join(
+            f'  url "https://github.com/block/schemabot/releases/download/v0.1.67/schemabot_0.1.67_{platform}.tar.gz"\n  sha256 "' + "b" * 64 + '"'
+            for platform in ["darwin_arm64", "linux_arm64", "linux_amd64"]
+        ) + "\nend\n")
         module = self.load_script_module()
         expected_urls = [
             f"https://github.com/block/schemabot/releases/download/v0.1.68/schemabot_0.1.68_{platform}.tar.gz"
