@@ -43,8 +43,11 @@ class Trailblaze < Formula
     libexec.install resource("launcher").cached_download => "trailblaze"
     (libexec/"trailblaze").chmod 0755
 
+    # Put Homebrew's ffmpeg ahead of any older one on PATH: some releases (6.1-6.1.2, 7.0-7.0.2,
+    # 7.1-7.1.1) mistime Trailblaze's live screen recordings.
     (bin/"trailblaze").write_env_script libexec/"trailblaze",
                                         Language::Java.overridable_java_home_env("21")
+                                          .merge(PATH: "#{Formula["ffmpeg"].opt_bin}:$PATH")
   end
 
   test do
