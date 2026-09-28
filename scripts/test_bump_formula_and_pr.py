@@ -375,6 +375,28 @@ class BumpFormulaAndPrScriptTests(unittest.TestCase):
         self.assertIn(f'sha256 "{expected_artifacts[1][1]}"', formula_contents)
         self.assertNotIn('version "', formula_contents)
 
+    def test_goreleaser_filenames_track_release_versions(self) -> None:
+        target = self._sandbox / "Formula" / "schemabot.rb"
+        target.write_text('class Schemabot < Formula\n  version "0.1.67"\n' + "\n".join(
+            f'  url "https://github.com/block/schemabot/releases/download/v0.1.67/schemabot_0.1.67_{platform}.tar.gz"\n  sha256 "' + "b" * 64 + '"'
+            for platform in ["darwin_arm64", "linux_arm64", "linux_amd64"]
+        ) + "\nend\n")
+        module = self.load_script_module()
+        expected_urls = [
+            f"https://github.com/block/schemabot/releases/download/v0.1.68/schemabot_0.1.68_{platform}.tar.gz"
+            for platform in ["darwin_arm64", "linux_arm64", "linux_amd64"]
+        ]
+        with contextlib.chdir(self._sandbox):
+            with mock.patch.object(module, "resolve_sha256", return_value="a" * 64):
+                old_tag, artifacts = module.bump_formula_file(
+                    formula_name="schemabot", new_version="0.1.68", new_tag="v0.1.68",
+                    artifact_url="", input_sha256="",
+                )
+        self.assertEqual(old_tag, "v0.1.67")
+        self.assertEqual([url for url, _ in artifacts], expected_urls)
+        self.assertNotIn("0.1.67", target.read_text())
+        self.assertIn('version "0.1.68"', target.read_text())
+
     def test_compute_sha256_surfaces_download_errors(self) -> None:
         module = self.load_script_module()
 
