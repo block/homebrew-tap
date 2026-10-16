@@ -4,21 +4,21 @@ class Aittributor < Formula
   license "Apache-2.0"
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/block/aittributor/releases/download/v0.8.0/aittributor-aarch64-apple-darwin.bz2"
-      sha256 "46f3780a9aac54c521471776ac34bc35cab53a7bd7e69295d9a253087b3d5dd4"
+      url "https://github.com/block/aittributor/releases/download/v0.8.1/aittributor-aarch64-apple-darwin.bz2"
+      sha256 "9e38394fcc153dcb3085c25841ec5de7138d49e5da961abeb89998d548a7f059"
     else
-      url "https://github.com/block/aittributor/releases/download/v0.8.0/aittributor-x86_64-apple-darwin.bz2"
-      sha256 "a17de7bf6dde94e9c63550342dc52803c3126358d82ca0317f677160b709aa94"
+      url "https://github.com/block/aittributor/releases/download/v0.8.1/aittributor-x86_64-apple-darwin.bz2"
+      sha256 "4785435025943b910c31f2ca8d3058bc84d61f8a70bee484ca599dcf0a12fd14"
     end
   end
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/block/aittributor/releases/download/v0.8.0/aittributor-aarch64-unknown-linux-gnu.bz2"
-      sha256 "d006a450862f7e1ded1cb40b1c5f77d5a4f495d513e930c9b9588839154635ac"
+      url "https://github.com/block/aittributor/releases/download/v0.8.1/aittributor-aarch64-unknown-linux-gnu.bz2"
+      sha256 "a0fb006acea3770a8247f5343b600aa9f2e5253d9bc516776db9ba3771fbdd9c"
     else
-      url "https://github.com/block/aittributor/releases/download/v0.8.0/aittributor-x86_64-unknown-linux-gnu.bz2"
-      sha256 "f49d356e7fcd00ae04a20054ce07496c26d4e5f9c1f5400d9946273d08ab7f05"
+      url "https://github.com/block/aittributor/releases/download/v0.8.1/aittributor-x86_64-unknown-linux-gnu.bz2"
+      sha256 "c43d25a7ae03197dec1df5abf315c6f68dbba3a72cc19dd877fc26b52bf50488"
     end
   end
 
