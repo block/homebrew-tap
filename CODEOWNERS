@@ -14,6 +14,7 @@ Formula/cachew.rb @alecthomas
 Formula/francis.rb @tcmulcahy
 Formula/ghost.rb @chailandau @nahiyankhan
 Formula/lhm.rb @alecthomas
+Formula/pg-sprite.rb @aparajon @Kiran01bm
 Formula/qrgo.rb @afollestad
 Formula/radiography.rb @tcmulcahy @zach-klippenstein
 Formula/schemabot.rb @aparajon @Kiran01bm
