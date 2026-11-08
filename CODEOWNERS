@@ -16,6 +16,7 @@ Formula/ghost.rb @chailandau @nahiyankhan
 Formula/lhm.rb @alecthomas
 Formula/qrgo.rb @afollestad
 Formula/radiography.rb @tcmulcahy @zach-klippenstein
+Formula/schemabot.rb @aparajon @Kiran01bm
 Formula/spirit.rb @aparajon
 Formula/stoic.rb @tcmulcahy
 Formula/trailblaze.rb @handstandsam @tcmulcahy

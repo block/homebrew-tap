@@ -77,7 +77,17 @@ def bump_formula_file(
         old_urls = extract_all_fields(contents, "url")
         source_tag = extract_release_tag_from_url(old_urls[0])
         for i, old_url in enumerate(old_urls):
-            new_url = old_url.replace(source_tag, new_tag)
+            # GoReleaser filenames contain the version without the tag's v prefix.
+            # Rewrite the original filename separately so a new version containing
+            # the old version is not replaced twice.
+            parent, filename = old_url.rsplit("/", 1)
+            source_version = derive_new_version(source_tag)
+            filename = re.sub(
+                rf"(?<![0-9.]){re.escape(source_version)}(?![0-9.])",
+                lambda _: new_version,
+                filename,
+            )
+            new_url = parent.replace(source_tag, new_tag) + "/" + filename
             validate_artifact_url(new_url)
             sha256 = resolve_sha256(None, new_url)
             contents = replace_nth_field(contents, "url", i, new_url, formula_file)
