@@ -8,21 +8,21 @@ class PgSprite < Formula
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/block/pg-sprite/releases/download/v0.4.1/pg-sprite_0.4.1_darwin_arm64.tar.gz"
-      sha256 "9f2f423cea049954ac9a2cae4f538dd882d735ae4784b14d125b66135ecad512"
+      url "https://github.com/block/pg-sprite/releases/download/v0.5.0/pg-sprite_0.5.0_darwin_arm64.tar.gz"
+      sha256 "c4f1743a40bafddb06a6874f0850288510179e9d8afeac3d07569b218c432c68"
     else
-      url "https://github.com/block/pg-sprite/releases/download/v0.4.1/pg-sprite_0.4.1_darwin_amd64.tar.gz"
-      sha256 "2aeabbde1bd459cf5ae970e6cb0e8b5c953b3fcce44f870f1cad9aa19dc5ac7b"
+      url "https://github.com/block/pg-sprite/releases/download/v0.5.0/pg-sprite_0.5.0_darwin_amd64.tar.gz"
+      sha256 "511b7f638cb2b0dfa2b573faeb73ff670ab9bc513953d417fb37609b1cc09db8"
     end
   end
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/block/pg-sprite/releases/download/v0.4.1/pg-sprite_0.4.1_linux_arm64.tar.gz"
-      sha256 "cf4f22e467e03262e18d9aac52e08b6ae68b0820c8459b7e50acc749b427bc77"
+      url "https://github.com/block/pg-sprite/releases/download/v0.5.0/pg-sprite_0.5.0_linux_arm64.tar.gz"
+      sha256 "d3b5eddde3e425e7f714d2c926b2caa529e76f6437ab8e6b857b8c1f8097b6b9"
     else
-      url "https://github.com/block/pg-sprite/releases/download/v0.4.1/pg-sprite_0.4.1_linux_amd64.tar.gz"
-      sha256 "1feb05aef3fb928e275661fdd22ad06a881b932d424fe2a3892ca3d6bc73f019"
+      url "https://github.com/block/pg-sprite/releases/download/v0.5.0/pg-sprite_0.5.0_linux_amd64.tar.gz"
+      sha256 "b0b1236741544be86dc6d5435efd13d0702972e8406049d2851a865b9a2b89b6"
     end
   end
 
