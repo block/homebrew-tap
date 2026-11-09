@@ -377,7 +377,7 @@ class BumpFormulaAndPrScriptTests(unittest.TestCase):
 
     def test_goreleaser_filenames_track_release_versions(self) -> None:
         target = self._sandbox / "Formula" / "schemabot.rb"
-        target.write_text('class Schemabot < Formula\n  version "0.1.67"\n' + "\n".join(
+        target.write_text('class Schemabot < Formula\n' + "\n".join(
             f'  url "https://github.com/block/schemabot/releases/download/v0.1.67/schemabot_0.1.67_{platform}.tar.gz"\n  sha256 "' + "b" * 64 + '"'
             for platform in ["darwin_arm64", "linux_arm64", "linux_amd64"]
         ) + "\nend\n")
@@ -395,7 +395,27 @@ class BumpFormulaAndPrScriptTests(unittest.TestCase):
         self.assertEqual(old_tag, "v0.1.67")
         self.assertEqual([url for url, _ in artifacts], expected_urls)
         self.assertNotIn("0.1.67", target.read_text())
-        self.assertIn('version "0.1.68"', target.read_text())
+        self.assertNotIn('version "', target.read_text())
+
+    def test_dotted_filenames_track_release_versions(self) -> None:
+        target = self._sandbox / "Formula" / "tool.rb"
+        target.write_text('class Tool < Formula\n' + "\n".join(
+            f'  url "https://github.com/block/tool/releases/download/v0.1.8/tool-{platform}-0.1.8.tar.gz"\n  sha256 "' + "b" * 64 + '"'
+            for platform in ["darwin-arm64", "linux-amd64"]
+        ) + "\nend\n")
+        module = self.load_script_module()
+        expected_urls = [
+            f"https://github.com/block/tool/releases/download/v0.1.83/tool-{platform}-0.1.83.tar.gz"
+            for platform in ["darwin-arm64", "linux-amd64"]
+        ]
+        with contextlib.chdir(self._sandbox):
+            with mock.patch.object(module, "resolve_sha256", return_value="a" * 64):
+                old_tag, artifacts = module.bump_formula_file(
+                    formula_name="tool", new_version="0.1.83", new_tag="v0.1.83",
+                    artifact_url="", input_sha256="",
+                )
+        self.assertEqual(old_tag, "v0.1.8")
+        self.assertEqual([url for url, _ in artifacts], expected_urls)
 
     def test_compute_sha256_surfaces_download_errors(self) -> None:
         module = self.load_script_module()

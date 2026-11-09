@@ -79,11 +79,13 @@ def bump_formula_file(
         for i, old_url in enumerate(old_urls):
             # GoReleaser filenames contain the version without the tag's v prefix.
             # Rewrite the original filename separately so a new version containing
-            # the old version is not replaced twice.
+            # the old version is not replaced twice. The version must not continue
+            # into a longer version number on either side, but may be followed by
+            # a file extension such as .tar.gz.
             parent, filename = old_url.rsplit("/", 1)
             source_version = derive_new_version(source_tag)
             filename = re.sub(
-                rf"(?<![0-9.]){re.escape(source_version)}(?![0-9.])",
+                rf"(?<![0-9])(?<![0-9]\.){re.escape(source_version)}(?!\.?[0-9])",
                 lambda _: new_version,
                 filename,
             )
