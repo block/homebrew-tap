@@ -46,13 +46,30 @@ def require_env(name: str) -> str:
     return value
 
 
-def derive_new_version(tag: str) -> str:
+def version_from_tag(tag: str) -> str:
     match = re.search(r"([0-9]+(?:\.[0-9]+)+)$", tag)
     return match.group(1) if match else tag
 
 
-def is_multi_arch_formula(contents: str) -> bool:
-    return len(extract_all_fields(contents, "url")) > 1
+def rewrite_release_urls(
+    old_urls: list[str], *, old_tag: str, new_tag: str, new_version: str
+) -> list[str]:
+    old_version = version_from_tag(old_tag)
+    new_urls: list[str] = []
+    for old_url in old_urls:
+        # GoReleaser filenames contain the version without the tag's v prefix.
+        # Rewrite the original filename separately so a new version containing
+        # the old version is not replaced twice. The version must not continue
+        # into a longer version number on either side, but may be followed by
+        # a file extension such as .tar.gz.
+        parent, filename = old_url.rsplit("/", 1)
+        filename = re.sub(
+            rf"(?<![0-9])(?<![0-9]\.){re.escape(old_version)}(?!\.?[0-9])",
+            lambda _: new_version,
+            filename,
+        )
+        new_urls.append(parent.replace(old_tag, new_tag) + "/" + filename)
+    return new_urls
 
 
 def bump_formula_file(
@@ -68,47 +85,31 @@ def bump_formula_file(
         fail(f"{formula_file} does not exist")
 
     contents = formula_file.read_text()
-    old_tag = extract_release_tag_from_url(extract_field(contents, "url", formula_file))
-    artifacts: list[tuple[str, str]] = []
+    old_urls = extract_all_fields(contents, "url")
+    if not old_urls:
+        fail(f"Unable to find url line in {formula_file}")
+    old_tag = extract_release_tag_from_url(old_urls[0])
     if extract_all_fields(contents, "version"):
         contents = update_fields(contents, {"version": new_version}, formula_file)
 
-    if is_multi_arch_formula(contents):
-        old_urls = extract_all_fields(contents, "url")
-        source_tag = extract_release_tag_from_url(old_urls[0])
-        for i, old_url in enumerate(old_urls):
-            # GoReleaser filenames contain the version without the tag's v prefix.
-            # Rewrite the original filename separately so a new version containing
-            # the old version is not replaced twice. The version must not continue
-            # into a longer version number on either side, but may be followed by
-            # a file extension such as .tar.gz.
-            parent, filename = old_url.rsplit("/", 1)
-            source_version = derive_new_version(source_tag)
-            filename = re.sub(
-                rf"(?<![0-9])(?<![0-9]\.){re.escape(source_version)}(?!\.?[0-9])",
-                lambda _: new_version,
-                filename,
-            )
-            new_url = parent.replace(source_tag, new_tag) + "/" + filename
-            validate_artifact_url(new_url)
-            sha256 = resolve_sha256(None, new_url)
-            contents = replace_nth_field(contents, "url", i, new_url, formula_file)
-            contents = replace_nth_field(contents, "sha256", i, sha256, formula_file)
-            artifacts.append((new_url, sha256))
-    else:
+    artifact_inputs: list[tuple[str, str | None]]
+    if len(old_urls) == 1:
         if not artifact_url:
-            fail("--artifact-url is required for single-arch formulas")
-        validate_artifact_url(artifact_url)
-        sha256 = resolve_sha256(input_sha256 or None, artifact_url)
-        contents = update_fields(
-            contents,
-            {
-                "url": artifact_url,
-                "sha256": sha256,
-            },
-            formula_file,
+            fail("--artifact-url is required for single-URL formulas")
+        artifact_inputs = [(artifact_url, input_sha256 or None)]
+    else:
+        new_urls = rewrite_release_urls(
+            old_urls, old_tag=old_tag, new_tag=new_tag, new_version=new_version
         )
-        artifacts.append((artifact_url, sha256))
+        artifact_inputs = [(url, None) for url in new_urls]
+
+    artifacts: list[tuple[str, str]] = []
+    for i, (url, supplied_sha256) in enumerate(artifact_inputs):
+        validate_artifact_url(url)
+        sha256 = resolve_sha256(supplied_sha256, url)
+        contents = replace_nth_field(contents, "url", i, url, formula_file)
+        contents = replace_nth_field(contents, "sha256", i, sha256, formula_file)
+        artifacts.append((url, sha256))
 
     formula_file.write_text(contents)
     return old_tag, artifacts
@@ -352,7 +353,7 @@ def main() -> None:
 
     artifact_url = os.environ.get("ARTIFACT_URL", "")
     input_sha256 = os.environ.get("INPUT_SHA256", "")
-    new_version = derive_new_version(new_tag)
+    new_version = version_from_tag(new_tag)
 
     if bump_type == "formula":
         old_tag, artifacts = bump_formula_file(
