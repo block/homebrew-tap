@@ -239,20 +239,20 @@ class BumpFormulaAndPrScriptTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("Missing required environment variable: GH_TOKEN", result.stderr)
 
-    def test_derive_new_version_accepts_date_patch_tags(self) -> None:
+    def test_version_from_tag_accepts_date_patch_tags(self) -> None:
         module = self.load_script_module()
 
-        self.assertEqual(module.derive_new_version("v2026.05.04.1"), "2026.05.04.1")
-        self.assertEqual(module.derive_new_version("v2.9"), "2.9")
-        self.assertEqual(module.derive_new_version("release-v1"), "release-v1")
+        self.assertEqual(module.version_from_tag("v2026.05.04.1"), "2026.05.04.1")
+        self.assertEqual(module.version_from_tag("v2.9"), "2.9")
+        self.assertEqual(module.version_from_tag("release-v1"), "release-v1")
 
-    def test_single_arch_requires_artifact_url(self) -> None:
+    def test_single_url_requires_artifact_url(self) -> None:
         self.write_formula("demo", "e" * 64)
 
         result = self.run_script(ARTIFACT_URL="")
 
         self.assertEqual(result.returncode, 1)
-        self.assertIn("--artifact-url is required for single-arch formulas", result.stderr)
+        self.assertIn("--artifact-url is required for single-URL formulas", result.stderr)
 
     def test_formula_bump_updates_an_existing_version_field(self) -> None:
         self.write_formula("demo", "b" * 64)
@@ -281,7 +281,53 @@ class BumpFormulaAndPrScriptTests(unittest.TestCase):
         result = self.run_script()
 
         self.assertEqual(result.returncode, 1)
-        self.assertIn("Unable to update sha256 in Formula/demo.rb", result.stderr)
+        self.assertIn("Unable to update sha256 occurrence 0 in Formula/demo.rb", result.stderr)
+
+    def test_single_url_formula_calculates_missing_checksum(self) -> None:
+        self.write_formula("demo", "b" * 64)
+        module = self.load_script_module()
+        new_url = "https://github.com/block/demo/releases/download/v1.2.3/custom-name.tar.gz"
+        expected_sha256 = "a" * 64
+
+        with contextlib.chdir(self._sandbox):
+            with mock.patch.object(module.brew_utils, "compute_sha256", return_value=expected_sha256) as download:
+                old_tag, artifacts = module.bump_formula_file(
+                    formula_name="demo", new_version="1.2.3", new_tag="v1.2.3",
+                    artifact_url=new_url, input_sha256="",
+                )
+
+        download.assert_called_once_with(new_url)
+        self.assertEqual(old_tag, "v0.1.0")
+        self.assertEqual(artifacts, [(new_url, expected_sha256)])
+        formula_contents = (self._sandbox / "Formula" / "demo.rb").read_text()
+        self.assertIn(f'url "{new_url}"', formula_contents)
+        self.assertIn(f'sha256 "{expected_sha256}"', formula_contents)
+
+    def test_failed_artifact_download_does_not_modify_formula(self) -> None:
+        module = self.load_script_module()
+        target = self._sandbox / "Formula" / "demo.rb"
+        for multi_url in (False, True):
+            with self.subTest(multi_url=multi_url):
+                if multi_url:
+                    self.write_multi_arch_formula("demo", "b" * 64, "c" * 64)
+                else:
+                    self.write_formula("demo", "b" * 64)
+                target.write_text(target.read_text().replace(
+                    "class Demo < Formula\n", 'class Demo < Formula\n  version "0.1.0"\n'
+                ))
+                original = target.read_text()
+                # Fail the second download for a multi-URL formula, after its
+                # first artifact has already been resolved.
+                results = ["a" * 64] if multi_url else []
+                results.append(OSError("download failed"))
+                with contextlib.chdir(self._sandbox):
+                    with mock.patch.object(module, "resolve_sha256", side_effect=results):
+                        with self.assertRaisesRegex(OSError, "download failed"):
+                            module.bump_formula_file(
+                                formula_name="demo", new_version="1.2.3", new_tag="v1.2.3",
+                                artifact_url="https://example.com/demo.tar.gz", input_sha256="",
+                            )
+                self.assertEqual(target.read_text(), original)
 
     def test_multi_arch_formula_pr_body_uses_updated_artifacts(self) -> None:
         self.write_multi_arch_formula("demo", "b" * 64, "c" * 64)
