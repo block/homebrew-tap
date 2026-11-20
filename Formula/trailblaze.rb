@@ -5,8 +5,8 @@
 class Trailblaze < Formula
   desc "AI-powered UI testing framework for iOS, Android, and Web"
   homepage "https://github.com/block/trailblaze"
-  url "https://github.com/block/trailblaze/releases/download/v2026.11.12/trailblaze.jar"
-  sha256 "974a6885710dac0906be3813139c8fc35d1f4b3033e8a40d425940cf4a474c9d"
+  url "https://github.com/block/trailblaze/releases/download/v2026.11.20/trailblaze.jar"
+  sha256 "d0f8a41f73cb9c8847923e3aadff2636992813b5cccb5d77029e6a65198c7eb7"
   license "Apache-2.0"
 
   depends_on "openjdk@21"
@@ -34,7 +34,7 @@ class Trailblaze < Formula
   end
 
   resource "launcher" do
-    url "https://github.com/block/trailblaze/releases/download/v2026.11.12/trailblaze"
+    url "https://github.com/block/trailblaze/releases/download/v2026.11.20/trailblaze"
     sha256 "a47149be91483e81662d3eb43f922972bda89e04423aa60b33515d3d33342de0"
   end
 
