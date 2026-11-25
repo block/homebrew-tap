@@ -4,21 +4,21 @@ class Cachew < Formula
   license "Apache-2.0"
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/block/cachew/releases/download/v0.5.7/cachew-darwin-arm64.tar.gz"
-      sha256 "a27f701e587e52692af09ac9c364b1956d68e48340db2fedbbd07d7b1739d3b3"
+      url "https://github.com/block/cachew/releases/download/v0.8.6/cachew-darwin-arm64.tar.gz"
+      sha256 "04ac52ea89a2a4a2d07fb96591c89b531861bf1f6332082b0eac6e0f19810e8f"
     else
-      url "https://github.com/block/cachew/releases/download/v0.5.7/cachew-darwin-amd64.tar.gz"
-      sha256 "a7c9ead4d39a51c23202c4485b9be08702c010127b46934db7544d30d0e309ae"
+      url "https://github.com/block/cachew/releases/download/v0.8.6/cachew-darwin-amd64.tar.gz"
+      sha256 "2d8858e22234cc723469c8ca48c9ebc1c34258519c1d68170c4939a95c43f286"
     end
   end
 
   on_linux do
     if Hardware::CPU.arm?
-      url "https://github.com/block/cachew/releases/download/v0.5.7/cachew-linux-arm64.tar.gz"
-      sha256 "b706ebb78a9800617955a9f6b0634ad76915c7cbc3f1d0d7b624f2eaaf126004"
+      url "https://github.com/block/cachew/releases/download/v0.8.6/cachew-linux-arm64.tar.gz"
+      sha256 "00d683a422c9886e3a61b04795157a4a7a5d04f0af6386f11494d271f8b060f5"
     else
-      url "https://github.com/block/cachew/releases/download/v0.5.7/cachew-linux-amd64.tar.gz"
-      sha256 "2ae9ee5c8e6bbe2170ef3cc33b61cdc7e2198079dfd662d215770407facf669c"
+      url "https://github.com/block/cachew/releases/download/v0.8.6/cachew-linux-amd64.tar.gz"
+      sha256 "212c7c56ba94ad539cca10f643cc532501c61212903fa9d254d44e8020e7f62f"
     end
   end
 
